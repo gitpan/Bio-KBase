@@ -7,7 +7,7 @@ use URI;
 
 =head1 NAME
 
-KBase::Bio::CentralStore
+Bio::KBase::CentralStore
 
 =head1 DESCRIPTION
 

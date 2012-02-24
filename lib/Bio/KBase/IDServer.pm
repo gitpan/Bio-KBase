@@ -7,7 +7,7 @@ use URI;
 
 =head1 NAME
 
-KBase::Bio::IDServer
+Bio::KBase::IDServer
 
 =head1 DESCRIPTION
 

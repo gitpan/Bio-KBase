@@ -21,4 +21,4 @@ no_index:
 requires:
   JSON::RPC::Client: 0
   Test::More: 0
-version: 0.01
+version: 0.02
