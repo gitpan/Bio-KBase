@@ -4,8 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-use Bio::KBase::CentralStore;
-use Bio::KBase::IDServer;
+use Bio::KBase::CDMI::Client;
 
 =head1 NAME
 
@@ -19,6 +18,8 @@ Version 0.02
 
 our $VERSION = '0.02';
 
+our %DefaultURL = (central_store => 'http://bio-data-1.mcs.anl.gov/services/cdmi_api',
+		   id_server => 'http://bio-data-1.mcs.anl.gov/services/idserver');
 
 sub new
 {
@@ -32,14 +33,23 @@ sub central_store
 {
     my($self) = @_;
 
-    return Bio::KBase::CentralStore->new();
+    return Bio::KBase::CDMI::Client->new($DefaultURL{central_store});
 }
 
 sub id_server
 {
     my($self) = @_;
 
-    return Bio::KBase::IDServer->new();
+    my $server;
+    eval {
+	require Bio::KBase::IDServer::Client;
+	$server = Bio::KBase::IDServer::Client->new($DefaultURL{id_server});
+    };
+    if ($@)
+    {
+	die "ID server client code is not available in this installation";
+    }
+    return $server;
 }
 
 =head1 SYNOPSIS

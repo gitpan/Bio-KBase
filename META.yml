@@ -1,5 +1,5 @@
 ---
-abstract: 'DOE Systems Biology Knowledgebase'
+abstract: 'The KBase perl API.'
 author:
   - 'Robert Olson <olson@mcs.anl.gov>'
 build_requires:
@@ -9,7 +9,7 @@ configure_requires:
 distribution_type: module
 dynamic_config: 1
 generated_by: 'ExtUtils::MakeMaker version 6.62'
-license: perl
+license: unrestricted
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
@@ -21,4 +21,4 @@ no_index:
 requires:
   JSON::RPC::Client: 0
   Test::More: 0
-version: 0.02
+version: 0.04

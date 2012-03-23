@@ -1,12 +1,12 @@
 {
-   "abstract" : "DOE Systems Biology Knowledgebase",
+   "abstract" : "The KBase perl API.",
    "author" : [
       "Robert Olson <olson@mcs.anl.gov>"
    ],
    "dynamic_config" : 1,
    "generated_by" : "ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.112150",
    "license" : [
-      "perl_5"
+      "unrestricted"
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
@@ -38,5 +38,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "0.02"
+   "version" : "0.04"
 }
