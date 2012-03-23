@@ -6,7 +6,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME                => 'Bio::KBase',
     AUTHOR              => q{Robert Olson <olson@mcs.anl.gov>},
-    VERSION             => '0.04',
+    VERSION             => '0.05',
     ABSTRACT         => 'The KBase perl API.',
     ($ExtUtils::MakeMaker::VERSION >= 6.3002
       ? ('LICENSE'=> 'unrestricted')
