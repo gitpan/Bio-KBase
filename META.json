@@ -32,11 +32,12 @@
       },
       "runtime" : {
          "requires" : {
+            "Exception::Class" : 0,
             "JSON::RPC::Client" : 0,
             "Test::More" : 0
          }
       }
    },
    "release_status" : "stable",
-   "version" : "0.05"
+   "version" : "0.06"
 }

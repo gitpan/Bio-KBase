@@ -9,6 +9,7 @@ package Bio::KBase::CDMI::CDMILoader;
     use File::Spec;
     use File::Temp;
     use IDServerAPIClient;
+    use Bio::KBase::CDMI::Sources;
 
 =head1 CDMI Load Utility Object
 
@@ -26,7 +27,7 @@ A L<Stats> object for tracking statistics about the load.
 
 =item db
 
-The L<CDMI> object for the database being loaded.
+The L<Bio::KBase::CDMI::CDMI> object for the database being loaded.
 
 =item idserver
 
@@ -50,13 +51,14 @@ all of the relations will be loaded from the files created.
 List of relation names in the order they should be loaded
 by L</LoadRelations>.
 
-=item typed
+=item sourceData
 
-TRUE if ID requests are typed, that is, if the object type is
-part of the source specification in the ID request. FALSE if
-ID requests are untyped. This option should be turned on if
-the current source's IDs are unique within type but not
-globally unique within the source.
+L<Bio::KBase::CDMI::Sources> object describing the load characteristics
+of the current data source.
+
+=item genome
+
+ID of the genome currently being loaded (if any)
 
 =back
 
@@ -64,7 +66,7 @@ globally unique within the source.
 
 =head3 GetLine
 
-    my @fields = CDMILoader::GetLine($ih);
+    my @fields = Bio::KBase::CDMI::CDMILoader::GetLine($ih);
 
 or
 
@@ -81,7 +83,8 @@ Open input file handle.
 
 =item RETURN
 
-Returns a list of the fields in the next input line.
+Returns a list of the fields in the next input line. Note that fields
+containing a single period (C<.>) will be converted to null strings.
 
 =back
 
@@ -96,12 +99,13 @@ sub GetLine {
     my $line = <$ih>;
     chomp $line;
     # Return the individual fields.
-    return split /\t/, $line;
+    my @retVal = map { ($_ eq '.' ? '' : $_) } split /\t/, $line;
+    return @retVal;
 }
 
 =head3 ReadFastaRecord
 
-    my ($sequence, $nextID, $nextComment) = CDMILoader::ReadFastaRecord($ih);
+    my ($sequence, $nextID, $nextComment) = Bio::KBase::CDMI::CDMILoader::ReadFastaRecord($ih);
 
 or
 
@@ -162,7 +166,7 @@ sub ReadFastaRecord {
 
 =head3 ParseMetadata
 
-    my $metaHash = CDMILoader::ParseMetadata($fileName);
+    my $metaHash = Bio::KBase::CDMI::CDMILoader::ParseMetadata($fileName);
 
 or
 
@@ -235,7 +239,7 @@ sub ParseMetadata {
 
 =head3 ReadAttribute
 
-    my $value = CDMILoader::ReadAttribute($fileName);
+    my $value = Bio::KBase::CDMI::CDMILoader::ReadAttribute($fileName);
 
 or
 
@@ -278,12 +282,14 @@ sub ReadAttribute {
 
 =head3 ConvertTime
 
-    my $timeValue = CDMILoader::ConvertTime($modelTime);
+    my $timeValue = Bio::KBase::CDMI::CDMILoader::ConvertTime($modelTime);
 
 Convert a time from ModelSEED format to an ERDB time value. The ModelSEED
 format is
 
 B<YYYY>C<->B<MM>C<->B<DD>C<T>B<HH>C<:>B<MM>C<:>B<SS>
+
+The C<T> may sometimes be replaced by a space.
 
 =over 4
 
@@ -305,10 +311,13 @@ sub ConvertTime {
     # Declare the return variable.
     my $retVal = 0;
     # Parse the components.
-    if ($modelTime =~ /(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/) {
-        # Convert the date/time.
+    if ($modelTime =~ /(\d+)[-\/](\d+)[-\/](\d+)[T ](\d+):(\d+):(\d+)/) {
         my $dt = DateTime->new(year => $1, month => $2, day => $3,
                                hour => $4, minute => $5, second => $6);
+        $retVal = $dt->epoch();
+    } elsif ($modelTime =~ /(\d+)[-\/](\d+)[-\/](\d+)/) {
+        my $dt = DateTime->new(year => $1, month => $2, day => $3,
+                               hour => 12, minute => 0, second => 0);
         $retVal = $dt->epoch();
     }
     # Return the result.
@@ -327,7 +336,7 @@ Create a new CDMI loader object for the specified CMDI database.
 
 =item cdmi
 
-A L<CDMI> object for the database being loaded.
+A L<Bio::KBase::CDMI::CDMI> object for the database being loaded.
 
 =item idserver
 
@@ -356,8 +365,9 @@ sub new {
     }
     # Attach the ID server.
     $retVal->{idserver} = $idserver;
-    # Default to untyped ID requests.
-    $retVal->{typed} = 0;
+    # Default to no genome and a source of KBase.
+    $retVal->{sourceData} = Bio::KBase::CDMI::Sources->new("KBase");
+    $retVal->{genome} = "";
     # Create the relation loader stuff.
     $retVal->{relations} = {};
     $retVal->{reltionList} = [];
@@ -547,6 +557,59 @@ sub LoadRelations {
 
 
 =head2 Loader Utility Methods
+
+=head3 genome_load_file_name
+
+    my $fileName = $loader->genome_load_file_name($directory, $name);
+
+Compute the fully-qualified name of a load file. The load file will be
+located in the specified directory and will have either the name
+given, or the name given with the current genome ID inserted before
+the extension. So, for example, if the given name is C<contigs.fa>
+and the genome ID is C<100226.1>, this method will look for
+C<contigs.100226.1.fa> first, and if that is not found return
+C<contigs.fa>.
+
+=over 4
+
+=item directory
+
+Directory containing the load files.
+
+=item name
+
+Name of the particular load file.
+
+=item RETURN
+
+Returns a fully-qualified file name to use in the load.
+
+=back
+
+=cut
+
+sub genome_load_file_name {
+    # Get the parameters.
+    my ($self, $directory, $name) = @_;
+    # Start with the default file name.
+    my $retVal = "$directory/$name";
+    # Get the genome ID.
+    my $genome = $self->{genome};
+    # Only Check for a genome-altered file if we have a genome ID.
+    if ($genome) {
+        # Compute the genome-altered file name.
+        my @parts = split  /\./, $name;
+        my $extension = pop @parts;
+        my $altName = $directory . "/" . join(".", @parts, $genome, $extension);
+        # Check to see if it exists.
+        if (-f $altName) {
+            # It does, so use it.
+            $retVal = $altName;
+        }
+    }
+    # Return the file name found.
+    return $retVal;
+}
 
 =head3 CheckRole
 
@@ -846,42 +909,62 @@ sub ConvertFileRecord {
 
 =head2 KBase ID Services
 
-=head3 SetTyped
+=head3 SetSource
 
-    $loader->SetTyped($typingFlag);
+    $loader->SetSource($source);
 
-Indicate whether or not ID requests are typed.
-
-=over 4
-
-=item typingFlag
-
-TRUE if ID requests are typed, else FALSE.
-
-=back
-
-=cut
-
-sub SetTyped {
-    # Get the parameters.
-    my ($self, $typingFlag) = @_;
-    # Update the typed flag.
-    $self->{typed} = $typingFlag;
-}
-
-=head3 FindKBaseIDs
-
-    my $idMapping = $loader->FindKBaseIDs($source, $type, \@ids);
-
-
-Find the KBase IDs for the specified identifiers from the given external
-source database. No new IDs will be created or registered.
+Specify the current database source.
 
 =over 4
 
 =item source
 
-Name of the source database.
+Name of the database from which data is being loaded.
+
+=back
+
+=cut
+
+sub SetSource {
+    # Get the parameters.
+    my ($self, $source) = @_;
+    # Update the source data.
+    $self->{sourceData} = Bio::KBase::CDMI::Sources->new($source);
+}
+
+=head3 SetGenome
+
+    $loader->SetGenome($genome);
+
+Specify the ID of the genome being loaded. This helps the ID services
+determine if the genome ID needs to be added to the object ID when
+calling for the KBase ID.
+
+=over 4
+
+=item genome
+
+ID of the genome currently being loaded.
+
+=back
+
+=cut
+
+sub SetGenome {
+    # Get the parameters.
+    my ($self, $genome) = @_;
+    # Store the proposed genome ID.
+    $self->{genome} = $genome;
+}
+
+=head3 FindKBaseIDs
+
+    my $idMapping = $loader->FindKBaseIDs($type, \@ids);
+
+Find the KBase IDs for the specified identifiers from the given external
+source database. No new IDs will be created or registered.
+
+=over 4
 
 =item type
 
@@ -903,18 +986,22 @@ will not appear in the hash.
 
 sub FindKBaseIDs {
     # Get the parameters.
-    my ($self, $source, $type, $ids) = @_;
-    # Compute the real source using the type.
-    my $realSource = $source . ($self->{typed} ? ":$type" : "");
+    my ($self, $type, $ids) = @_;
+    # Compute the real source and the real IDs.
+    my $realSource = $self->realSource($type);
+    my $idMap = $self->idMap($type, $ids);
     # Call through to the ID server.
-    my $retVal = $self->idserver->external_ids_to_kbase_ids($realSource, $ids);
+    my $kbMap = $self->idserver->external_ids_to_kbase_ids($realSource,
+            [map { $idMap->{$_} } @$ids]);
+    # Convert the modified IDs to the original IDs.
+    my %retVal = map { $_ => $kbMap->{$idMap->{$_}} } @$ids;
     # Return the result.
-    return $retVal;
+    return \%retVal;
 }
 
 =head3 GetKBaseIDs
 
-    my $idHash = $loader->GetKBaseIDs($prefix, $source, $type, \@ids);
+    my $idHash = $loader->GetKBaseIDs($prefix, $type, \@ids);
 
 Compute KBase IDs for all the specified foreign IDs from the specified
 source. The KBase IDs will all have the indicated prefix, which must
@@ -926,10 +1013,6 @@ begin with the string C<kb|>.
 
 Prefix to be put on all the IDs created. Must be a string beginning with
 C<kb|>.
-
-=item source
-
-Source (core) database for the IDs.
 
 =item type
 
@@ -950,23 +1033,27 @@ Returns a reference to a hash mapping the foreign IDs to KBase IDs.
 
 sub GetKBaseIDs {
     # Get the parameters.
-    my ($self, $prefix, $source, $type, $ids) = @_;
+    my ($self, $prefix, $type, $ids) = @_;
     # Insure the IDs are a list reference.
     if (ref $ids ne 'ARRAY') {
         $ids = [$ids];
     }
-    # Compute the real source using the type.
-    my $realSource = $source . ($self->{typed} ? ":$type" : "");
-    # Call the ID server.
-    my $retVal = $self->idserver->register_ids($prefix, $realSource, $ids);
+    # Compute the real source and the real IDs.
+    my $realSource = $self->realSource($type);
+    my $idMap = $self->idMap($type, $ids);
+    # Call through to the ID server.
+    my $kbMap = $self->idserver->register_ids($prefix, $realSource,
+            [map { $idMap->{$_} } @$ids]);
+    # Convert the modified IDs to the original IDs.
+    my %retVal = map { $_ => $kbMap->{$idMap->{$_}} } @$ids;
     # Return the result.
-    return $retVal;
+    return \%retVal;
 }
 
 
 =head3 GetKBaseID
 
-    my $kbID = $loader->GetKBaseID($prefix, $source, $id);
+    my $kbID = $loader->GetKBaseID($prefix, $type, $id);
 
 Return the KBase ID for the specified foreign ID from the specified
 source. If no such ID exists, one will be created with the specified
@@ -976,16 +1063,12 @@ prefix (which must begin with the string C<kb|>).
 
 =item prefix
 
-Prefix to be put on all the IDs created. Must be a string beginning with
+Prefix to be put on the ID created. Must be a string beginning with
 C<kb|>.
-
-=item source
-
-Source (core) database for the IDs.
 
 =item type
 
-Type of object to which the IDs apply.
+Type of object to which the ID applies
 
 =item id
 
@@ -1002,11 +1085,110 @@ exist, it will have been created.
 
 sub GetKBaseID {
     # Get the parameters.
-    my ($self, $prefix, $source, $type, $id) = @_;
+    my ($self, $prefix, $type, $id) = @_;
     # Ask the ID server for the ID.
-    my $idHash = $self->GetKBaseIDs($prefix, $source, $type, [$id]);
+    my $idHash = $self->GetKBaseIDs($prefix, $type, [$id]);
     # Return the result.
     return $idHash->{$id};
+}
+
+=head3 source
+
+    my $source = $loader->source;
+
+Return the source name associated with this load.
+
+=cut
+
+sub source {
+    # Get the parameters.
+    my ($self) = @_;
+    # Return the source name.
+    return $self->{sourceData}->name;
+}
+
+=head3 realSource
+
+    my $realSource = $loader->realSource($type);
+
+Return the object source name to be used when requesting an ID for
+objects of the specified type. This is either the unmodified source
+name or (for typed IDs) the source name suffixed with the object
+type.
+
+=over 4
+
+=item type
+
+Type of object for which IDs are being generated or retrieved.
+
+=item RETURN
+
+Returns a string to be used for requesting ID services related to
+objects of the specified type.
+
+=back
+
+=cut
+
+sub realSource {
+    # Get the parameters.
+    my ($self, $type) = @_;
+    # Start with the source name.
+    my $retVal = $self->{sourceData}->name;
+    # If we're typed, add the type.
+    if ($self->{sourceData}->typed) {
+        $retVal .= ":$type";
+    }
+    # Return the result.
+    return $retVal;
+}
+
+
+=head3 idMap
+
+    my $idMap = $loader->idMap($type, \@ids);
+
+Return a hash mapping each incoming source ID to the ID that should be
+passed to the ID server in order to find its KBase ID. This is either
+the raw ID or (if the source has genome-based IDs) the ID prefixed by
+the current genome ID.
+
+=over 4
+
+=item type
+
+Type of object for the IDs.
+
+=item ids
+
+Reference to a list of source IDs.
+
+=item RETURN
+
+Returns a reference to a hash mapping each incoming source ID to the ID that
+should be used when looking it up on the ID server.
+
+=back
+
+=cut
+
+sub idMap {
+    # Get the parameters.
+    my ($self, $type, $ids) = @_;
+    # Declare the return hash.
+    my %retVal;
+    # Determine whether or not we are genome-based. Note that we are
+    # never genome-based when looking for genome IDs.
+    if ($self->{sourceData}->genomeBased && $type ne 'Genome') {
+        # We are, so prefix the current genome ID.
+        %retVal = map { $_ => "$self->{genome}:$_" } @$ids;
+    } else {
+        # We aren't, so use the IDs in their raw form.
+        %retVal = map { $_ => $_ } @$ids;
+    }
+    # Return the result.
+    return \%retVal;
 }
 
 1;

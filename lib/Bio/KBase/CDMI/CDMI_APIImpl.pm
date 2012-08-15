@@ -1,5 +1,6 @@
 package Bio::KBase::CDMI::CDMI_APIImpl;
 use strict;
+use Bio::KBase::Exceptions;
 
 =head1 NAME
 
@@ -23,7 +24,21 @@ They construct as output a mapping which takes as input an id and
 associates as output a set of fields from that instance of the entity.  Each
 routine allows the user to specify which fields are desired.
 
-        NEEDS EXAMPLE
+For example, assume you have an input file "Staphylococci," which is a list of genome IDs for each species of Staphylococcus in the database. The get_entity_Genome command is used to retrieve detailed information about each genome in the file. By using different modifiers, you can specify what kind of information you want to display. In this example, the modifier "contigs" was used. Thus, the number next to the genome ID in the output file indicates the number of contigs each Staphylococcus genome has. For a list of available modifiers relating to each identity, please refer to the ER model.
+
+        > / cat Staphylococci | cut -f 1 | get_entity_Genome - f contigs
+        kb|g.134        2
+        kb|g.636        1
+        kb|g.2506        15
+        kb|g.9303        1
+        kb|g.3801        87
+        kb|g.2025        46
+        kb|g.2516        13
+        kb|g.2603        33
+        kb|g.19928        2
+        kb|g.1852        131
+        kb|g.8476        1
+        kb|g.2742        46
 
 To use these routines effectively, a user will need to gradually
 become familiar with the entities supported in the CDM.  We suggest
@@ -32,9 +47,10 @@ get a good introduction.
 
 The next simplest set of routines provide the "get relationship" routines.  These
 take as input a list of ids for a specific entity type, and the give access
-to the relationship nodes associated with each entity.  Thus,
+to the relationship nodes associated with each entity.  Thus, get_relationship_WasSubmittedBy takes the input genome ID and outputs the ID with an added column showing the source of that particular genome. It is essential to be able to navigate the ER model to successfully implement these commands, since not all relationship types are applicable to each entity.
 
-        NEEDS EXAMPLE
+        > / echo 'kb|g.0' | get_relationship_WasSubmittedBy -to id
+        kb|g.0        SEED
 
 Of the remaining CDMI-API routines, most are used to extract data by
 "crossing one or more relationships".  Thus,
@@ -79,6 +95,7 @@ For now, we recommend that you experiment a bit and use common sense.
 use strict;
 use Bio::KBase::CDMI::CDMI;
 use Data::Dumper;
+use Carp;
 use Bio::KBase::CDMI::CDMI_EntityAPIImpl;
 use Sphinx::Search;
 
@@ -188,7 +205,17 @@ made the annotation and when (as seconds from the epoch).
 
 sub fids_to_annotations
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_annotations:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_annotations');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_annotations
@@ -206,6 +233,13 @@ sub fids_to_annotations
 	}
     }
     #END fids_to_annotations
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_annotations:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_annotations');
+    }
     return($return);
 }
 
@@ -257,11 +291,21 @@ from the fids to their assigned functions.
 
 sub fids_to_functions
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_functions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_functions');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_functions
-                                        my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
 
     for my $id (@$fids) {
@@ -270,6 +314,13 @@ sub fids_to_functions
         $return->{$id} = $function;
     }
     #END fids_to_functions
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_functions:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_functions');
+    }
     return($return);
 }
 
@@ -338,11 +389,21 @@ connections, we hope that they will help record the associations.
 
 sub fids_to_literature
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_literature:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_literature');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_literature
-                                        my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $id (@$fids) {
         my @resultRows = $kb->GetAll("Produces IsATopicOf Publication",
@@ -356,6 +417,13 @@ sub fids_to_literature
 
     }
     #END fids_to_literature
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_literature:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_literature');
+    }
     return($return);
 }
 
@@ -413,11 +481,21 @@ always true, but probably should be.
 
 sub fids_to_protein_families
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_protein_families:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_protein_families');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_protein_families
-                                        my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $id (@$fids) {
         my @resultRows = $kb->GetFlat("IsMemberOf",
@@ -429,6 +507,13 @@ sub fids_to_protein_families
     }
 
     #END fids_to_protein_families
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_protein_families:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_protein_families');
+    }
     return($return);
 }
 
@@ -483,22 +568,41 @@ This can occur due to fusions or to broad specificity of substrate.
 
 sub fids_to_roles
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_roles:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_roles');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_roles
-                                        my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $id (@$fids) {
         my @resultRows = $kb->GetFlat("HasFunctional",
                                       "HasFunctional(from_link) = ?", [$id],
 				     'HasFunctional(to_link)');
 	if (@resultRows != 0) {
+	    my %roles = map { $_ => 1 } @resultRows;
+	    my @resultRows = sort keys(%roles);
                 $return->{$id} = \@resultRows;
         }
     }
 
     #END fids_to_roles
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_roles:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_roles');
+    }
     return($return);
 }
 
@@ -554,21 +658,40 @@ contain a fid (or, you can submit as input a set of fids and get the subsystems 
 
 sub fids_to_subsystems
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_subsystems:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_subsystems');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_subsystems
-                my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $id (@$fids) {
         my @resultRows = $kb->GetFlat("IsContainedIn HasRole IsIncludedIn",
                                       "IsContainedIn(from_link) = ?", [$id],
 				     'IsIncludedIn(to_link)');
 	if (@resultRows != 0) {
-                $return->{$id} = \@resultRows;
+	    my %tmp = map { $_ => 1 } @resultRows;
+	    @resultRows = sort keys(%tmp);
+	    $return->{$id} = \@resultRows;
         }
     }
     #END fids_to_subsystems
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_subsystems:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_subsystems');
+    }
     return($return);
 }
 
@@ -640,7 +763,17 @@ approximately what percentage appear to be actually related for a few cutoff val
 
 sub fids_to_co_occurring_fids
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_co_occurring_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_co_occurring_fids');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_co_occurring_fids
@@ -664,6 +797,13 @@ sub fids_to_co_occurring_fids
     }
 
     #END fids_to_co_occurring_fids
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_co_occurring_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_co_occurring_fids');
+    }
     return($return);
 }
 
@@ -745,17 +885,34 @@ not achieve).
 
 sub fids_to_locations
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_locations:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_locations');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_locations
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $fid (@$fids) {
         my @locs = map { [$_->Contig, $_->Begin, $_->Dir, $_->Length] } $kb->GetLocations($fid);
         $return->{$fid} = \@locs;
     }
     #END fids_to_locations
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_locations:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_locations');
+    }
     return($return);
 }
 
@@ -811,17 +968,608 @@ as "occuring" in a region if the location of the gene overlaps the designated re
 
 sub locations_to_fids
 {
-    my($self, $region_of_dna_strings) = @_;
+    my $self = shift;
+    my($region_of_dna_strings) = @_;
+
+    my @_bad_arguments;
+    (ref($region_of_dna_strings) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"region_of_dna_strings\" (value was \"$region_of_dna_strings\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to locations_to_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'locations_to_fids');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN locations_to_fids
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $region (@$region_of_dna_strings) {
         my @fids = $kb->GenesInRegion($region);
         $return->{$region} = \@fids;
     }
     #END locations_to_fids
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to locations_to_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'locations_to_fids');
+    }
+    return($return);
+}
+
+
+
+
+=head2 alleles_to_bp_locs
+
+  $return = $obj->alleles_to_bp_locs($alleles)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$alleles is an alleles
+$return is a reference to a hash where the key is an allele and the value is a bp_loc
+alleles is a reference to a list where each element is an allele
+allele is a string
+bp_loc is a reference to a list containing 2 items:
+	0: a contig
+	1: an int
+contig is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$alleles is an alleles
+$return is a reference to a hash where the key is an allele and the value is a bp_loc
+alleles is a reference to a list where each element is an allele
+allele is a string
+bp_loc is a reference to a list containing 2 items:
+	0: a contig
+	1: an int
+contig is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub alleles_to_bp_locs
+{
+    my $self = shift;
+    my($alleles) = @_;
+
+    my @_bad_arguments;
+    (ref($alleles) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"alleles\" (value was \"$alleles\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to alleles_to_bp_locs:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'alleles_to_bp_locs');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return);
+    #BEGIN alleles_to_bp_locs
+    my $kb = $self->{db};
+    $return = {};
+    my $n = @$alleles;
+    my $targets = "(" . ('?,' x $n); chop $targets; $targets .= ')';
+    my $allele_constraint = "Summarizes(from_link) IN $targets";
+
+    my @res = $kb->GetAll('Summarizes',
+			  $allele_constraint,
+			  $alleles,
+			  'Summarizes(from_link) Summarizes(to_link) Summarizes(position)');
+
+    foreach my $tuple (@res)
+    {
+	my($allele,$contig,$position) = @$tuple;
+	$return->{$allele} = [$contig,$position];
+    }
+
+    #END alleles_to_bp_locs
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to alleles_to_bp_locs:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'alleles_to_bp_locs');
+    }
+    return($return);
+}
+
+
+
+
+=head2 region_to_fids
+
+  $return = $obj->region_to_fids($region_of_dna)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$region_of_dna is a region_of_dna
+$return is a fids
+region_of_dna is a reference to a list containing 4 items:
+	0: a contig
+	1: a begin
+	2: a strand
+	3: a length
+contig is a string
+begin is an int
+strand is a string
+length is an int
+fids is a reference to a list where each element is a fid
+fid is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$region_of_dna is a region_of_dna
+$return is a fids
+region_of_dna is a reference to a list containing 4 items:
+	0: a contig
+	1: a begin
+	2: a strand
+	3: a length
+contig is a string
+begin is an int
+strand is a string
+length is an int
+fids is a reference to a list where each element is a fid
+fid is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub region_to_fids
+{
+    my $self = shift;
+    my($region_of_dna) = @_;
+
+    my @_bad_arguments;
+    (ref($region_of_dna) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"region_of_dna\" (value was \"$region_of_dna\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to region_to_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'region_to_fids');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return);
+    #BEGIN region_to_fids
+    my $kb = $self->{db};
+    my($contig,$beg,$strand,$ln) = @$region_of_dna;
+    my $region = "$contig" . "_" . $beg . $strand . $ln;
+    my @fids = $kb->GenesInRegion($region);
+    $return = \@fids;
+    #END region_to_fids
+    my @_bad_returns;
+    (ref($return) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to region_to_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'region_to_fids');
+    }
+    return($return);
+}
+
+
+
+
+=head2 region_to_alleles
+
+  $return = $obj->region_to_alleles($region_of_dna)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$region_of_dna is a region_of_dna
+$return is a reference to a list where each element is a reference to a list containing 2 items:
+	0: an allele
+	1: an int
+region_of_dna is a reference to a list containing 4 items:
+	0: a contig
+	1: a begin
+	2: a strand
+	3: a length
+contig is a string
+begin is an int
+strand is a string
+length is an int
+allele is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$region_of_dna is a region_of_dna
+$return is a reference to a list where each element is a reference to a list containing 2 items:
+	0: an allele
+	1: an int
+region_of_dna is a reference to a list containing 4 items:
+	0: a contig
+	1: a begin
+	2: a strand
+	3: a length
+contig is a string
+begin is an int
+strand is a string
+length is an int
+allele is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub region_to_alleles
+{
+    my $self = shift;
+    my($region_of_dna) = @_;
+
+    my @_bad_arguments;
+    (ref($region_of_dna) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"region_of_dna\" (value was \"$region_of_dna\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to region_to_alleles:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'region_to_alleles');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return);
+    #BEGIN region_to_alleles
+    my $kb = $self->{db};
+    my($contig,$beg,$strand,$len) = @$region_of_dna;
+    my $end;
+    if ($strand eq "+")
+    {
+	$end = $beg + $len - 1;
+    }
+    else
+    {
+	($beg,$end) = ($beg - ($len - 1),$beg);
+    }
+    my @res = $kb->GetAll('IsSummarizedBy',
+			  "IsSummarizedBy(from_link) = ? AND IsSummarizedBy(position) >= ? AND IsSummarizedBy(position) <= ?", [$contig,$beg,$end],
+			  ["IsSummarizedBy(to_link)","IsSummarizedBy(position)"]);
+    $return = \@res;
+    #END region_to_alleles
+    my @_bad_returns;
+    (ref($return) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to region_to_alleles:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'region_to_alleles');
+    }
+    return($return);
+}
+
+
+
+
+=head2 alleles_to_traits
+
+  $return = $obj->alleles_to_traits($alleles)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$alleles is an alleles
+$return is a reference to a hash where the key is an allele and the value is a traits
+alleles is a reference to a list where each element is an allele
+allele is a string
+traits is a reference to a list where each element is a trait
+trait is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$alleles is an alleles
+$return is a reference to a hash where the key is an allele and the value is a traits
+alleles is a reference to a list where each element is an allele
+allele is a string
+traits is a reference to a list where each element is a trait
+trait is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub alleles_to_traits
+{
+    my $self = shift;
+    my($alleles) = @_;
+
+    my @_bad_arguments;
+    (ref($alleles) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"alleles\" (value was \"$alleles\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to alleles_to_traits:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'alleles_to_traits');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return);
+    #BEGIN alleles_to_traits
+    if (@$alleles < 1)  { return $return }
+
+    my $kb = $self->{db};
+
+    my $n = @$alleles;
+    my $targets = "(" . ('?,' x $n); chop $targets; $targets .= ')';
+    my $allele_constraint = "Summarizes(from_link) IN $targets";
+
+    my @res = $kb->GetAll('Summarizes Contig IsImpactedBy',
+			  $allele_constraint,
+			  $alleles,
+			  'Summarizes(from_link) IsImpactedBy(to_link)');
+
+    foreach my $tuple (@res)
+    {
+	my($allele,$trait) = @$tuple;
+	push(@{$return->{$allele}},$trait);
+    }
+    #END alleles_to_traits
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to alleles_to_traits:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'alleles_to_traits');
+    }
+    return($return);
+}
+
+
+
+
+=head2 traits_to_alleles
+
+  $return = $obj->traits_to_alleles($traits)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$traits is a traits
+$return is a reference to a hash where the key is a trait and the value is an alleles
+traits is a reference to a list where each element is a trait
+trait is a string
+alleles is a reference to a list where each element is an allele
+allele is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$traits is a traits
+$return is a reference to a hash where the key is a trait and the value is an alleles
+traits is a reference to a list where each element is a trait
+trait is a string
+alleles is a reference to a list where each element is an allele
+allele is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub traits_to_alleles
+{
+    my $self = shift;
+    my($traits) = @_;
+
+    my @_bad_arguments;
+    (ref($traits) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"traits\" (value was \"$traits\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to traits_to_alleles:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'traits_to_alleles');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return);
+    #BEGIN traits_to_alleles
+    if (@$traits < 1)  { return $return }
+
+    my $kb = $self->{db};
+
+    my $n = @$traits;
+    my $targets = "(" . ('?,' x $n); chop $targets; $targets .= ')';
+    my $trait_constraint = "Impacts(from_link) IN $targets";
+    my @res = $kb->GetAll('Impacts Contig IsSummarizedBy',
+			  "$trait_constraint AND Impacts(position) = IsSummarizedBy(position)",
+			  $traits,
+			  'Impacts(from_link) IsSummarizedBy(to_link)');
+
+    foreach my $tuple (@res)
+    {
+	my($trait,$allele) = @$tuple;
+	push(@{$return->{$trait}},$allele);
+    }
+    #END traits_to_alleles
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to traits_to_alleles:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'traits_to_alleles');
+    }
+    return($return);
+}
+
+
+
+
+=head2 ous_with_trait
+
+  $return = $obj->ous_with_trait($genome, $trait, $measurement_type, $min_value, $max_value)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$genome is a genome
+$trait is a trait
+$measurement_type is a measurement_type
+$min_value is a float
+$max_value is a float
+$return is a reference to a list where each element is a reference to a list containing 2 items:
+	0: an ou
+	1: a measurement_value
+genome is a string
+trait is a string
+measurement_type is a string
+ou is a string
+measurement_value is a float
+
+</pre>
+
+=end html
+
+=begin text
+
+$genome is a genome
+$trait is a trait
+$measurement_type is a measurement_type
+$min_value is a float
+$max_value is a float
+$return is a reference to a list where each element is a reference to a list containing 2 items:
+	0: an ou
+	1: a measurement_value
+genome is a string
+trait is a string
+measurement_type is a string
+ou is a string
+measurement_value is a float
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub ous_with_trait
+{
+    my $self = shift;
+    my($genome, $trait, $measurement_type, $min_value, $max_value) = @_;
+
+    my @_bad_arguments;
+    (!ref($genome)) or push(@_bad_arguments, "Invalid type for argument \"genome\" (value was \"$genome\")");
+    (!ref($trait)) or push(@_bad_arguments, "Invalid type for argument \"trait\" (value was \"$trait\")");
+    (!ref($measurement_type)) or push(@_bad_arguments, "Invalid type for argument \"measurement_type\" (value was \"$measurement_type\")");
+    (!ref($min_value)) or push(@_bad_arguments, "Invalid type for argument \"min_value\" (value was \"$min_value\")");
+    (!ref($max_value)) or push(@_bad_arguments, "Invalid type for argument \"max_value\" (value was \"$max_value\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to ous_with_trait:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'ous_with_trait');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return);
+    #BEGIN ous_with_trait
+    my $kb = $self->{db};
+    my @res = $kb->GetAll('Measures ObservationalUnit UsesReference',
+			  'Measures(from_link) = ? AND Measures(measure_id) = ? AND Measures(value) <= ? AND Measures(value) >= ? AND UsesReference(to_link) = ?',
+			  [$trait,$measurement_type,$max_value,$min_value,$genome],
+			  'Measures(to_link) Measures(value)');
+    $return = \@res;
+    #END ous_with_trait
+    my @_bad_returns;
+    (ref($return) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to ous_with_trait:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'ous_with_trait');
+    }
     return($return);
 }
 
@@ -900,11 +1648,21 @@ regions that make up the location.
 
 sub locations_to_dna_sequences
 {
-    my($self, $locations) = @_;
+    my $self = shift;
+    my($locations) = @_;
+
+    my @_bad_arguments;
+    (ref($locations) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"locations\" (value was \"$locations\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to locations_to_dna_sequences:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'locations_to_dna_sequences');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($dna_seqs);
     #BEGIN locations_to_dna_sequences
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $dna_seqs = [];
     for my $location (@$locations) {
         my @dnas;
@@ -915,6 +1673,13 @@ sub locations_to_dna_sequences
         push @$dna_seqs, [$location, join("", @dnas)];
     }
     #END locations_to_dna_sequences
+    my @_bad_returns;
+    (ref($dna_seqs) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"dna_seqs\" (value was \"$dna_seqs\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to locations_to_dna_sequences:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'locations_to_dna_sequences');
+    }
     return($dna_seqs);
 }
 
@@ -970,7 +1735,17 @@ be the entire set (within Kbase) that have the sequence as a translation.
 
 sub proteins_to_fids
 {
-    my($self, $proteins) = @_;
+    my $self = shift;
+    my($proteins) = @_;
+
+    my @_bad_arguments;
+    (ref($proteins) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"proteins\" (value was \"$proteins\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to proteins_to_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'proteins_to_fids');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN proteins_to_fids
@@ -985,6 +1760,13 @@ sub proteins_to_fids
         }
     }
     #END proteins_to_fids
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to proteins_to_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'proteins_to_fids');
+    }
     return($return);
 }
 
@@ -1043,11 +1825,21 @@ sources, and so a protein can be in multiple families.
 
 sub proteins_to_protein_families
 {
-    my($self, $proteins) = @_;
+    my $self = shift;
+    my($proteins) = @_;
+
+    my @_bad_arguments;
+    (ref($proteins) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"proteins\" (value was \"$proteins\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to proteins_to_protein_families:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'proteins_to_protein_families');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN proteins_to_protein_families
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $id (@$proteins) {
         my %famH = map { $_ => 1 } $kb->GetFlat("IsProteinFor IsMemberOf",
@@ -1056,6 +1848,13 @@ sub proteins_to_protein_families
         $return->{$id} = [sort keys %famH];
     }
     #END proteins_to_protein_families
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to proteins_to_protein_families:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'proteins_to_protein_families');
+    }
     return($return);
 }
 
@@ -1122,11 +1921,21 @@ and we will attempt to do so.
 
 sub proteins_to_literature
 {
-    my($self, $proteins) = @_;
+    my $self = shift;
+    my($proteins) = @_;
+
+    my @_bad_arguments;
+    (ref($proteins) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"proteins\" (value was \"$proteins\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to proteins_to_literature:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'proteins_to_literature');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN proteins_to_literature
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $id (@$proteins) {
         my @resultRows = $kb->GetAll("IsATopicOf Publication",
@@ -1139,6 +1948,13 @@ sub proteins_to_literature
     }
 
     #END proteins_to_literature
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to proteins_to_literature:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'proteins_to_literature');
+    }
     return($return);
 }
 
@@ -1208,11 +2024,21 @@ groups represented in Kbase) to each of a set of sequences.
 
 sub proteins_to_functions
 {
-    my($self, $proteins) = @_;
+    my $self = shift;
+    my($proteins) = @_;
+
+    my @_bad_arguments;
+    (ref($proteins) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"proteins\" (value was \"$proteins\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to proteins_to_functions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'proteins_to_functions');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN proteins_to_functions
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $id (@$proteins) {
         my @resultRows = $kb->GetAll("IsProteinFor Feature",
@@ -1223,6 +2049,13 @@ sub proteins_to_functions
         }
     }
     #END proteins_to_functions
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to proteins_to_functions:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'proteins_to_functions');
+    }
     return($return);
 }
 
@@ -1291,11 +2124,21 @@ returns the fids associated with each assigned function).
 
 sub proteins_to_roles
 {
-    my($self, $proteins) = @_;
+    my $self = shift;
+    my($proteins) = @_;
+
+    my @_bad_arguments;
+    (ref($proteins) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"proteins\" (value was \"$proteins\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to proteins_to_roles:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'proteins_to_roles');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN proteins_to_roles
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $id (@$proteins) {
         my %roleH = map { $_ => 1 } $kb->GetFlat("IsProteinFor HasFunctional",
@@ -1304,6 +2147,13 @@ sub proteins_to_roles
         $return->{$id} = [sort keys %roleH];
     }
     #END proteins_to_roles
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to proteins_to_roles:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'proteins_to_roles');
+    }
     return($return);
 }
 
@@ -1358,11 +2208,21 @@ may be multifunctional, meaning that they may be implementing other roles, as we
 
 sub roles_to_proteins
 {
-    my($self, $roles) = @_;
+    my $self = shift;
+    my($roles) = @_;
+
+    my @_bad_arguments;
+    (ref($roles) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"roles\" (value was \"$roles\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to roles_to_proteins:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'roles_to_proteins');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN roles_to_proteins
-            my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     if ((! $roles) || (@$roles == 0)) { return $return }
     for my $role (@$roles) {
@@ -1372,6 +2232,13 @@ sub roles_to_proteins
         $return->{$role} = [sort keys %roleH];
     }
     #END roles_to_proteins
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to roles_to_proteins:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'roles_to_proteins');
+    }
     return($return);
 }
 
@@ -1426,11 +2293,21 @@ is returned as a hash with key role description and values composed of sets of s
 
 sub roles_to_subsystems
 {
-    my($self, $roles) = @_;
+    my $self = shift;
+    my($roles) = @_;
+
+    my @_bad_arguments;
+    (ref($roles) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"roles\" (value was \"$roles\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to roles_to_subsystems:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'roles_to_subsystems');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN roles_to_subsystems
-            my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     if ((! $roles) || (@$roles == 0)) { return $return }
 
@@ -1444,6 +2321,13 @@ sub roles_to_subsystems
     }
 
     #END roles_to_subsystems
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to roles_to_subsystems:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'roles_to_subsystems');
+    }
     return($return);
 }
 
@@ -1499,11 +2383,21 @@ of distinct protein_families returned.
 
 sub roles_to_protein_families
 {
-    my($self, $roles) = @_;
+    my $self = shift;
+    my($roles) = @_;
+
+    my @_bad_arguments;
+    (ref($roles) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"roles\" (value was \"$roles\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to roles_to_protein_families:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'roles_to_protein_families');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN roles_to_protein_families
-            my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     if ((! $roles) || (@$roles == 0)) { return $return }
     for my $role (@$roles) {
@@ -1516,6 +2410,13 @@ sub roles_to_protein_families
     }
 
     #END roles_to_protein_families
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to roles_to_protein_families:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'roles_to_protein_families');
+    }
     return($return);
 }
 
@@ -1576,11 +2477,21 @@ greater than 0.5 or less than -0.5.
 
 sub fids_to_coexpressed_fids
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_coexpressed_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_coexpressed_fids');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_coexpressed_fids
-            $return = {};
+    $return = {};
     if (@$fids < 1)  { return $return }
 
     my $kb = $self->{db};
@@ -1602,6 +2513,13 @@ sub fids_to_coexpressed_fids
     }
 
     #END fids_to_coexpressed_fids
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_coexpressed_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_coexpressed_fids');
+    }
     return($return);
 }
 
@@ -1656,11 +2574,21 @@ of MD5s.  This may, or may not, be a mistake.
 
 sub protein_families_to_fids
 {
-    my($self, $protein_families) = @_;
+    my $self = shift;
+    my($protein_families) = @_;
+
+    my @_bad_arguments;
+    (ref($protein_families) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"protein_families\" (value was \"$protein_families\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to protein_families_to_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'protein_families_to_fids');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN protein_families_to_fids
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $id (@$protein_families) {
         my @resultRows = $kb->GetFlat("HasMember",
@@ -1671,6 +2599,13 @@ sub protein_families_to_fids
         }
     }
     #END protein_families_to_fids
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to protein_families_to_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'protein_families_to_fids');
+    }
     return($return);
 }
 
@@ -1725,11 +2660,21 @@ represented by each of a set of protein_families.  We define protein_families as
 
 sub protein_families_to_proteins
 {
-    my($self, $protein_families) = @_;
+    my $self = shift;
+    my($protein_families) = @_;
+
+    my @_bad_arguments;
+    (ref($protein_families) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"protein_families\" (value was \"$protein_families\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to protein_families_to_proteins:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'protein_families_to_proteins');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN protein_families_to_proteins
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $id (@$protein_families) {
         my %protH = map { $_ => 1 } $kb->GetFlat("HasMember Produces",
@@ -1738,6 +2683,13 @@ sub protein_families_to_proteins
         $return->{$id} = [sort keys %protH];
     }
     #END protein_families_to_proteins
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to protein_families_to_proteins:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'protein_families_to_proteins');
+    }
     return($return);
 }
 
@@ -1789,11 +2741,21 @@ that make up the family.  Each input protein_family is mapped to a family functi
 
 sub protein_families_to_functions
 {
-    my($self, $protein_families) = @_;
+    my $self = shift;
+    my($protein_families) = @_;
+
+    my @_bad_arguments;
+    (ref($protein_families) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"protein_families\" (value was \"$protein_families\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to protein_families_to_functions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'protein_families_to_functions');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN protein_families_to_functions
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     my $n = @$protein_families;
     my $targets = "(" . ('?,' x $n); chop $targets; $targets .= ')';
@@ -1810,6 +2772,13 @@ sub protein_families_to_functions
 	$return->{$ff} = $func;
     }
     #END protein_families_to_functions
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to protein_families_to_functions:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'protein_families_to_functions');
+    }
     return($return);
 }
 
@@ -1876,7 +2845,17 @@ on clustered pairs from the same protein_families.
 
 sub protein_families_to_co_occurring_families
 {
-    my($self, $protein_families) = @_;
+    my $self = shift;
+    my($protein_families) = @_;
+
+    my @_bad_arguments;
+    (ref($protein_families) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"protein_families\" (value was \"$protein_families\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to protein_families_to_co_occurring_families:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'protein_families_to_co_occurring_families');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN protein_families_to_co_occurring_families
@@ -1900,6 +2879,13 @@ sub protein_families_to_co_occurring_families
 	}
     }
     #END protein_families_to_co_occurring_families
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to protein_families_to_co_occurring_families:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'protein_families_to_co_occurring_families');
+    }
     return($return);
 }
 
@@ -1969,11 +2955,21 @@ fids that are believed to correspond to the input pair.
 
 sub co_occurrence_evidence
 {
-    my($self, $pairs_of_fids) = @_;
+    my $self = shift;
+    my($pairs_of_fids) = @_;
+
+    my @_bad_arguments;
+    (ref($pairs_of_fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"pairs_of_fids\" (value was \"$pairs_of_fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to co_occurrence_evidence:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'co_occurrence_evidence');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN co_occurrence_evidence
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     for my $pair (@$pairs_of_fids) {
 	my($fid1,$fid2) = @$pair;
 	my $flipped = ($fid1 gt $fid2) ? 1 : 0;
@@ -1996,6 +2992,13 @@ sub co_occurrence_evidence
         }
     }
     #END co_occurrence_evidence
+    my @_bad_returns;
+    (ref($return) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to co_occurrence_evidence:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'co_occurrence_evidence');
+    }
     return($return);
 }
 
@@ -2048,11 +3051,21 @@ produces a mapping from the input IDs to the returned DNA sequence in each case.
 
 sub contigs_to_sequences
 {
-    my($self, $contigs) = @_;
+    my $self = shift;
+    my($contigs) = @_;
+
+    my @_bad_arguments;
+    (ref($contigs) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"contigs\" (value was \"$contigs\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to contigs_to_sequences:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'contigs_to_sequences');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN contigs_to_sequences
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $contig ( @$contigs ) {
         my @dna = $kb->GetFlat("HasAsSequence HasSection ContigChunk",
@@ -2060,6 +3073,13 @@ sub contigs_to_sequences
         $return->{$contig} = join("", @dna);
     }
     #END contigs_to_sequences
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to contigs_to_sequences:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'contigs_to_sequences');
+    }
     return($return);
 }
 
@@ -2114,11 +3134,21 @@ The routine returns a mapping from contig IDs to lengths
 
 sub contigs_to_lengths
 {
-    my($self, $contigs) = @_;
+    my $self = shift;
+    my($contigs) = @_;
+
+    my @_bad_arguments;
+    (ref($contigs) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"contigs\" (value was \"$contigs\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to contigs_to_lengths:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'contigs_to_lengths');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN contigs_to_lengths
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $contig ( @$contigs ) {
         my ($len) = $kb->GetFlat("HasAsSequence ContigSequence",
@@ -2126,6 +3156,13 @@ sub contigs_to_lengths
         $return->{$contig} = $len;
     }
     #END contigs_to_lengths
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to contigs_to_lengths:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'contigs_to_lengths');
+    }
     return($return);
 }
 
@@ -2181,11 +3218,21 @@ from contig ID to MD5 value.
 
 sub contigs_to_md5s
 {
-    my($self, $contigs) = @_;
+    my $self = shift;
+    my($contigs) = @_;
+
+    my @_bad_arguments;
+    (ref($contigs) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"contigs\" (value was \"$contigs\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to contigs_to_md5s:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'contigs_to_md5s');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN contigs_to_md5s
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $contig (@$contigs) {
         my ($md5) = $kb->GetFlat("HasAsSequence", 'HasAsSequence(from_link) = ?',
@@ -2193,6 +3240,13 @@ sub contigs_to_md5s
         $return->{$contig} = $md5;
     }
     #END contigs_to_md5s
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to contigs_to_md5s:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'contigs_to_md5s');
+    }
     return($return);
 }
 
@@ -2251,11 +3305,21 @@ md5s to genomes is used to get the genomes associated with each of a list of inp
 
 sub md5s_to_genomes
 {
-    my($self, $md5s) = @_;
+    my $self = shift;
+    my($md5s) = @_;
+
+    my @_bad_arguments;
+    (ref($md5s) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"md5s\" (value was \"$md5s\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to md5s_to_genomes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'md5s_to_genomes');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN md5s_to_genomes
-                    $return = {};
+    $return = {};
     my $kb = $self->{db};
     for my $md5 (@$md5s) {
         my @genomes = $kb->GetFlat('Genome', 'Genome(md5) = ?', [$md5],
@@ -2263,6 +3327,13 @@ sub md5s_to_genomes
         $return->{$md5} = \@genomes;
     }
     #END md5s_to_genomes
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to md5s_to_genomes:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'md5s_to_genomes');
+    }
     return($return);
 }
 
@@ -2318,11 +3389,21 @@ DNA sequences that make up the genome.
 
 sub genomes_to_md5s
 {
-    my($self, $genomes) = @_;
+    my $self = shift;
+    my($genomes) = @_;
+
+    my @_bad_arguments;
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to genomes_to_md5s:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_md5s');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN genomes_to_md5s
-                    $return = {};
+    $return = {};
     my $kb = $self->{db};
     for my $genome (@$genomes) {
         my ($md5) = $kb->GetFlat('Genome', 'Genome(id) = ?', [$genome],
@@ -2330,6 +3411,13 @@ sub genomes_to_md5s
         $return->{$genome} = $md5;
     }
     #END genomes_to_md5s
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to genomes_to_md5s:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_md5s');
+    }
     return($return);
 }
 
@@ -2374,7 +3462,7 @@ contig is a string
 
 =item Description
 
-The routine genomes_to_contigs can be used to retrieve the IDs of the contigs
+The routine genomes_to_con`tigs can be used to retrieve the IDs of the contigs
 associated with each of a list of input genomes.  The routine constructs a mapping
 from genome ID to the list of contigs included in the genome.
 
@@ -2384,11 +3472,21 @@ from genome ID to the list of contigs included in the genome.
 
 sub genomes_to_contigs
 {
-    my($self, $genomes) = @_;
+    my $self = shift;
+    my($genomes) = @_;
+
+    my @_bad_arguments;
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to genomes_to_contigs:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_contigs');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN genomes_to_contigs
-                    $return = {};
+    $return = {};
     my $kb = $self->{db};
     for my $genome (@$genomes) {
         my @contigs = $kb->GetFlat('IsComposedOf', 'IsComposedOf(from_link) = ?', [$genome],
@@ -2396,6 +3494,13 @@ sub genomes_to_contigs
         $return->{$genome} = \@contigs;
     }
     #END genomes_to_contigs
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to genomes_to_contigs:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_contigs');
+    }
     return($return);
 }
 
@@ -2456,11 +3561,22 @@ types_of_fids argument.
 
 sub genomes_to_fids
 {
-    my($self, $genomes, $types_of_fids) = @_;
+    my $self = shift;
+    my($genomes, $types_of_fids) = @_;
+
+    my @_bad_arguments;
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    (ref($types_of_fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"types_of_fids\" (value was \"$types_of_fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to genomes_to_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_fids');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN genomes_to_fids
-                    $return = {};
+    $return = {};
     my $kb = $self->{db};
     my (@marks, @parms);
     for my $type (@$types_of_fids) {
@@ -2478,11 +3594,18 @@ sub genomes_to_fids
         push @parms, @$types_of_fids;
     }
     for my $genome (@$genomes) {
-        my @fids = $kb->GetFlat('IsOwnerOf Feature', $filter,
+         my @fids = $kb->GetFlat('IsOwnerOf Feature', $filter,
                 [@parms, $genome], 'Feature(id)');
         $return->{$genome} = \@fids;
     }
     #END genomes_to_fids
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to genomes_to_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_fids');
+    }
     return($return);
 }
 
@@ -2566,11 +3689,21 @@ The output is a mapping from genome IDs to lists of the form shown above.
 
 sub genomes_to_taxonomies
 {
-    my($self, $genomes) = @_;
+    my $self = shift;
+    my($genomes) = @_;
+
+    my @_bad_arguments;
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to genomes_to_taxonomies:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_taxonomies');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN genomes_to_taxonomies
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     my $fields = 'TaxonomicGrouping(scientific_name) TaxonomicGrouping(id) TaxonomicGrouping(hidden) TaxonomicGrouping(domain)';
     for my $genome (@$genomes) {
@@ -2589,6 +3722,13 @@ sub genomes_to_taxonomies
         }
     }
     #END genomes_to_taxonomies
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to genomes_to_taxonomies:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_taxonomies');
+    }
     return($return);
 }
 
@@ -2654,11 +3794,21 @@ and presence or absence of the subsystem in the genome should be undetermined.
 
 sub genomes_to_subsystems
 {
-    my($self, $genomes) = @_;
+    my $self = shift;
+    my($genomes) = @_;
+
+    my @_bad_arguments;
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to genomes_to_subsystems:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_subsystems');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN genomes_to_subsystems
-                    $return = {};
+    $return = {};
     my $kb = $self->{db};
     for my $genome (@$genomes) {
         my @subs = $kb->GetAll('Uses Implements Variant IsDescribedBy', 'Uses(from_link) = ?', [$genome],
@@ -2666,6 +3816,13 @@ sub genomes_to_subsystems
         $return->{$genome} = \@subs;
     }
     #END genomes_to_subsystems
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to genomes_to_subsystems:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_subsystems');
+    }
     return($return);
 }
 
@@ -2725,11 +3882,21 @@ a [variant-code,genome ID] pair.
 
 sub subsystems_to_genomes
 {
-    my($self, $subsystems) = @_;
+    my $self = shift;
+    my($subsystems) = @_;
+
+    my @_bad_arguments;
+    (ref($subsystems) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"subsystems\" (value was \"$subsystems\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to subsystems_to_genomes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'subsystems_to_genomes');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN subsystems_to_genomes
-                    $return = {};
+    $return = {};
     my $kb = $self->{db};
     for my $subsystem (@$subsystems) {
         my @genomes = $kb->GetAll('Describes Variant IsImplementedBy IsUsedBy', 'Describes(from_link) = ?', [$subsystem],
@@ -2737,6 +3904,13 @@ sub subsystems_to_genomes
         $return->{$subsystem} = \@genomes;
     }
     #END subsystems_to_genomes
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to subsystems_to_genomes:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'subsystems_to_genomes');
+    }
     return($return);
 }
 
@@ -2805,7 +3979,18 @@ the genome that are included in the subsystem.
 
 sub subsystems_to_fids
 {
-    my($self, $subsystems, $genomes) = @_;
+    my $self = shift;
+    my($subsystems, $genomes) = @_;
+
+    my @_bad_arguments;
+    (ref($subsystems) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"subsystems\" (value was \"$subsystems\")");
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to subsystems_to_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'subsystems_to_fids');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN subsystems_to_fids
@@ -2847,6 +4032,13 @@ sub subsystems_to_fids
         $return->{$subsystem} = \%genomes;
     }
     #END subsystems_to_fids
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to subsystems_to_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'subsystems_to_fids');
+    }
     return($return);
 }
 
@@ -2906,11 +4098,22 @@ are not returned.  If it is 1, they are returned.
 
 sub subsystems_to_roles
 {
-    my($self, $subsystems, $aux) = @_;
+    my $self = shift;
+    my($subsystems, $aux) = @_;
+
+    my @_bad_arguments;
+    (ref($subsystems) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"subsystems\" (value was \"$subsystems\")");
+    (!ref($aux)) or push(@_bad_arguments, "Invalid type for argument \"aux\" (value was \"$aux\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to subsystems_to_roles:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'subsystems_to_roles');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN subsystems_to_roles
-            $return = {};
+    $return = {};
     my $kb = $self->{db};
     for my $subsystem (@$subsystems) {
 
@@ -2931,6 +4134,13 @@ sub subsystems_to_roles
         $return->{$subsystem} = \@roles;
     }
     #END subsystems_to_roles
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to subsystems_to_roles:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'subsystems_to_roles');
+    }
     return($return);
 }
 
@@ -3005,11 +4215,22 @@ sure that it all makes sense.
 
 sub subsystems_to_spreadsheets
 {
-    my($self, $subsystems, $genomes) = @_;
+    my $self = shift;
+    my($subsystems, $genomes) = @_;
+
+    my @_bad_arguments;
+    (ref($subsystems) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"subsystems\" (value was \"$subsystems\")");
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to subsystems_to_spreadsheets:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'subsystems_to_spreadsheets');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN subsystems_to_spreadsheets
-                    $return = {};
+    $return = {};
     if (! $genomes) {
         $genomes = [];
     }
@@ -3042,6 +4263,13 @@ sub subsystems_to_spreadsheets
         $return->{$subsystem} = \%sheet;
     }
     #END subsystems_to_spreadsheets
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to subsystems_to_spreadsheets:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'subsystems_to_spreadsheets');
+    }
     return($return);
 }
 
@@ -3090,11 +4318,12 @@ the minimal set we need to clean up in order to properly support modeling.
 
 sub all_roles_used_in_models
 {
-    my($self) = @_;
+    my $self = shift;
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN all_roles_used_in_models
-                    my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = [];
     my @res = $kb->GetAll('IsTriggeredBy',
 			  '',
@@ -3109,6 +4338,13 @@ sub all_roles_used_in_models
     my @tmp = sort keys(%roles);
     $return = \@tmp;
     #END all_roles_used_in_models
+    my @_bad_returns;
+    (ref($return) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to all_roles_used_in_models:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'all_roles_used_in_models');
+    }
     return($return);
 }
 
@@ -3183,11 +4419,21 @@ reaction is a string
 
 sub complexes_to_complex_data
 {
-    my($self, $complexes) = @_;
+    my $self = shift;
+    my($complexes) = @_;
+
+    my @_bad_arguments;
+    (ref($complexes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"complexes\" (value was \"$complexes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to complexes_to_complex_data:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'complexes_to_complex_data');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN complexes_to_complex_data
-            $return = {};
+    $return = {};
     if (@$complexes < 1)  { return $return }
 
     my $kb = $self->{db};
@@ -3238,6 +4484,13 @@ sub complexes_to_complex_data
     }
     return($return);
     #END complexes_to_complex_data
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to complexes_to_complex_data:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'complexes_to_complex_data');
+    }
     return($return);
 }
 
@@ -3308,7 +4561,17 @@ genome_data is a reference to a hash where the following keys are defined:
 
 sub genomes_to_genome_data
 {
-    my($self, $genomes) = @_;
+    my $self = shift;
+    my($genomes) = @_;
+
+    my @_bad_arguments;
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to genomes_to_genome_data:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_genome_data');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN genomes_to_genome_data
@@ -3352,6 +4615,13 @@ sub genomes_to_genome_data
 	}
     }
     #END genomes_to_genome_data
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to genomes_to_genome_data:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'genomes_to_genome_data');
+    }
     return($return);
 }
 
@@ -3412,7 +4682,17 @@ regulon is a string
 
 sub fids_to_regulon_data
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_regulon_data:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_regulon_data');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_regulon_data
@@ -3481,6 +4761,13 @@ sub fids_to_regulon_data
 	$return->{$fid} = $regulons_data;
     }
     #END fids_to_regulon_data
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_regulon_data:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_regulon_data');
+    }
     return($return);
 }
 
@@ -3533,7 +4820,17 @@ fid is a string
 
 sub regulons_to_fids
 {
-    my($self, $regulons) = @_;
+    my $self = shift;
+    my($regulons) = @_;
+
+    my @_bad_arguments;
+    (ref($regulons) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"regulons\" (value was \"$regulons\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to regulons_to_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'regulons_to_fids');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN regulons_to_fids
@@ -3556,6 +4853,13 @@ sub regulons_to_fids
 	push(@{$return->{$regulon}},$fid);
     }
     #END regulons_to_fids
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to regulons_to_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'regulons_to_fids');
+    }
     return($return);
 }
 
@@ -3648,7 +4952,17 @@ length is an int
 
 sub fids_to_feature_data
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_feature_data:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_feature_data');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_feature_data
@@ -3693,12 +5007,11 @@ sub fids_to_feature_data
     @res = $kb->GetAll('Feature Produces ProteinSequence IsATopicOf Publication',
 			  $produces_constraint,
 			  $fids,
-			  'Feature(id) IsATopicOf(to_link) Publication(citation)'
+			  'Feature(id) IsATopicOf(to_link) Publication(link) Publication(title)'
 			  );
     foreach my $tuple (@res)
     {
-	my($fid,$pubid,$url) = @$tuple;
-	my($link,$title)     = ($url->link(),$url->text());
+	my($fid,$pubid,$link,$title) = @$tuple;
 	push(@{$publications{$fid}},[$pubid,$link,$title]);
     }
     foreach my $fid (@$fids)
@@ -3716,6 +5029,13 @@ sub fids_to_feature_data
     }
     return($return);
     #END fids_to_feature_data
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_feature_data:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_feature_data');
+    }
     return($return);
 }
 
@@ -3738,15 +5058,13 @@ $return is a reference to a hash where the key is a protein and the value is a f
 proteins is a reference to a list where each element is a protein
 protein is a string
 function_assertions is a reference to a list where each element is a function_assertion
-function_assertion is a reference to a list containing 4 items:
+function_assertion is a reference to a list containing 3 items:
 	0: an id
 	1: a function
 	2: a source
-	3: an expert
 id is a string
 function is a string
 source is a string
-expert is a string
 
 </pre>
 
@@ -3759,15 +5077,13 @@ $return is a reference to a hash where the key is a protein and the value is a f
 proteins is a reference to a list where each element is a protein
 protein is a string
 function_assertions is a reference to a list where each element is a function_assertion
-function_assertion is a reference to a list containing 4 items:
+function_assertion is a reference to a list containing 3 items:
 	0: an id
 	1: a function
 	2: a source
-	3: an expert
 id is a string
 function is a string
 source is a string
-expert is a string
 
 
 =end text
@@ -3788,7 +5104,17 @@ proteins having identical protein sequence.
 
 sub equiv_sequence_assertions
 {
-    my($self, $proteins) = @_;
+    my $self = shift;
+    my($proteins) = @_;
+
+    my @_bad_arguments;
+    (ref($proteins) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"proteins\" (value was \"$proteins\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to equiv_sequence_assertions:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'equiv_sequence_assertions');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN equiv_sequence_assertions
@@ -3798,7 +5124,7 @@ sub equiv_sequence_assertions
 
     my $n = @$proteins;
     my $targets = "(" . ('?,' x $n); chop $targets; $targets .= ')';
-    my $protein_constraint1 = "IsNamedBy(from_link) IN $targets";
+    my $protein_constraint1 = "HasAssertedFunctionFrom(from_link) IN $targets";
     my $protein_constraint2 = "IsProteinFor(from_link) IN $targets";
     my @res = $kb->GetAll('IsProteinFor Feature IsOwnedBy Genome WasSubmittedBy',
 			  $protein_constraint2,
@@ -3808,21 +5134,28 @@ sub equiv_sequence_assertions
     foreach my $tuple (@res)
     {
 	my($md5,$id,$function,$source) = @$tuple;
-	push(@{$return->{$md5}},[$id,$function,$source,0]);
+	push(@{$return->{$md5}},[$id,$function,$source]);
     }
 
-    @res = $kb->GetAll('IsNamedBy Identifier HasAssertionFrom',
+    @res = $kb->GetAll('HasAssertedFunctionFrom',
 			  $protein_constraint1,
 			  $proteins,
-			  'IsNamedBy(from_link) HasAssertionFrom(from_link) HasAssertionFrom(function) HasAssertionFrom(to_link) HasAssertionFrom(expert)');
+			  'HasAssertedFunctionFrom(from_link) HasAssertedFunctionFrom(external_id) HasAssertedFunctionFrom(function) HasAssertedFunctionFrom(to_link)');
 
     foreach my $tuple (@res)
     {
-	my($md5,$id,$function,$source,$expert) = @$tuple;
-	push(@{$return->{$md5}},[$id,$function,$source,$expert]);
+	my($md5,$id,$function,$source) = @$tuple;
+	push(@{$return->{$md5}},[$id,$function,$source]);
     }
 
     #END equiv_sequence_assertions
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to equiv_sequence_assertions:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'equiv_sequence_assertions');
+    }
     return($return);
 }
 
@@ -3884,11 +5217,21 @@ Normally a fid will be in at most one regulon, but we support multiple regulons.
 
 sub fids_to_atomic_regulons
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_atomic_regulons:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_atomic_regulons');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_atomic_regulons
-                    $return = {};
+    $return = {};
     my $kb = $self->{db};
     for my $fid (@$fids)
     {
@@ -3904,6 +5247,13 @@ sub fids_to_atomic_regulons
         }
     }
     #END fids_to_atomic_regulons
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_atomic_regulons:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_atomic_regulons');
+    }
     return($return);
 }
 
@@ -3957,7 +5307,17 @@ Regulons may arise from several sources; hence, fids can be in multiple regulons
 
 sub atomic_regulons_to_fids
 {
-    my($self, $atomic_regulons) = @_;
+    my $self = shift;
+    my($atomic_regulons) = @_;
+
+    my @_bad_arguments;
+    (ref($atomic_regulons) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"atomic_regulons\" (value was \"$atomic_regulons\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to atomic_regulons_to_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'atomic_regulons_to_fids');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN atomic_regulons_to_fids
@@ -3980,6 +5340,13 @@ sub atomic_regulons_to_fids
     }
 
     #END atomic_regulons_to_fids
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to atomic_regulons_to_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'atomic_regulons_to_fids');
+    }
     return($return);
 }
 
@@ -4033,11 +5400,21 @@ the protein string in a separate call.
 
 sub fids_to_protein_sequences
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_protein_sequences:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_protein_sequences');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_protein_sequences
-            $return = {};
+    $return = {};
     if (@$fids < 1) { return $return }
 
     my $kb = $self->{db};
@@ -4056,6 +5433,13 @@ sub fids_to_protein_sequences
 	$return->{$fid} = $seq;
     }
     #END fids_to_protein_sequences
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_protein_sequences:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_protein_sequences');
+    }
     return($return);
 }
 
@@ -4106,7 +5490,17 @@ md5 is a string
 
 sub fids_to_proteins
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_proteins:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_proteins');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_proteins
@@ -4129,6 +5523,13 @@ sub fids_to_proteins
 	$return->{$fid} = $md5;
     }
     #END fids_to_proteins
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_proteins:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_proteins');
+    }
     return($return);
 }
 
@@ -4180,11 +5581,21 @@ corresponding to each of a set of fids.
 
 sub fids_to_dna_sequences
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_dna_sequences:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_dna_sequences');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_dna_sequences
-            $return = {};
+    $return = {};
     my $kb = $self->{db};
     for my $fid (@$fids) {
         my @locs = $kb->GetLocations($fid);
@@ -4195,6 +5606,13 @@ sub fids_to_dna_sequences
         $return->{$fid} = join("", @dna);
     }
     #END fids_to_dna_sequences
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_dna_sequences:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_dna_sequences');
+    }
     return($return);
 }
 
@@ -4260,7 +5678,18 @@ A "function" is a set of "roles" (often called "functional roles");
 
 sub roles_to_fids
 {
-    my($self, $roles, $genomes) = @_;
+    my $self = shift;
+    my($roles, $genomes) = @_;
+
+    my @_bad_arguments;
+    (ref($roles) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"roles\" (value was \"$roles\")");
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to roles_to_fids:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'roles_to_fids');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN roles_to_fids
@@ -4291,6 +5720,13 @@ sub roles_to_fids
 	push(@{$return->{$role}},$fid);
     }
     #END roles_to_fids
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to roles_to_fids:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'roles_to_fids');
+    }
     return($return);
 }
 
@@ -4353,7 +5789,17 @@ or roles to reactions goes through Complexes.
 
 sub reactions_to_complexes
 {
-    my($self, $reactions) = @_;
+    my $self = shift;
+    my($reactions) = @_;
+
+    my @_bad_arguments;
+    (ref($reactions) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"reactions\" (value was \"$reactions\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to reactions_to_complexes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'reactions_to_complexes');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN reactions_to_complexes
@@ -4375,6 +5821,13 @@ sub reactions_to_complexes
     }
 
     #END reactions_to_complexes
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to reactions_to_complexes:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'reactions_to_complexes');
+    }
     return($return);
 }
 
@@ -4428,11 +5881,22 @@ the details of Reactions.
 
 sub reaction_strings
 {
-    my($self, $reactions, $name_parameter) = @_;
+    my $self = shift;
+    my($reactions, $name_parameter) = @_;
+
+    my @_bad_arguments;
+    (ref($reactions) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"reactions\" (value was \"$reactions\")");
+    (!ref($name_parameter)) or push(@_bad_arguments, "Invalid type for argument \"name_parameter\" (value was \"$name_parameter\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to reaction_strings:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'reaction_strings');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN reaction_strings
-            $return = {};
+    $return = {};
     my $kb = $self->{db};
     for my $reaction (@$reactions)
     {
@@ -4509,6 +5973,13 @@ sub reaction_strings
     	$return->{$reaction} = $equationString;
     }
     #END reaction_strings
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to reaction_strings:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'reaction_strings');
+    }
     return($return);
 }
 
@@ -4569,7 +6040,17 @@ instead of the ID. If 0, only the ID will be included. The default is 0.
 
 sub roles_to_complexes
 {
-    my($self, $roles) = @_;
+    my $self = shift;
+    my($roles) = @_;
+
+    my @_bad_arguments;
+    (ref($roles) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"roles\" (value was \"$roles\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to roles_to_complexes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'roles_to_complexes');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN roles_to_complexes
@@ -4593,6 +6074,13 @@ sub roles_to_complexes
     }
 
     #END roles_to_complexes
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to roles_to_complexes:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'roles_to_complexes');
+    }
     return($return);
 }
 
@@ -4645,7 +6133,17 @@ role is a string
 
 sub complexes_to_roles
 {
-    my($self, $complexes) = @_;
+    my $self = shift;
+    my($complexes) = @_;
+
+    my @_bad_arguments;
+    (ref($complexes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"complexes\" (value was \"$complexes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to complexes_to_roles:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'complexes_to_roles');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN complexes_to_roles
@@ -4669,6 +6167,13 @@ sub complexes_to_roles
     }
 
     #END complexes_to_roles
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to complexes_to_roles:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'complexes_to_roles');
+    }
     return($return);
 }
 
@@ -4733,11 +6238,21 @@ role is a string
 
 sub fids_to_subsystem_data
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_subsystem_data:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_subsystem_data');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_subsystem_data
-            my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     for my $fid (@$fids) {
         my @subTuples = $kb->GetAll("IsContainedIn SSCell HasRole AND SSCell IsRoleFor Implements Variant IsDescribedBy",
@@ -4746,6 +6261,13 @@ sub fids_to_subsystem_data
         $return->{$fid} = \@subTuples if @subTuples;
     }
     #END fids_to_subsystem_data
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_subsystem_data:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_subsystem_data');
+    }
     return($return);
 }
 
@@ -4794,7 +6316,17 @@ genome is a string
 
 sub representative
 {
-    my($self, $genomes) = @_;
+    my $self = shift;
+    my($genomes) = @_;
+
+    my @_bad_arguments;
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to representative:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'representative');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN representative
@@ -4818,6 +6350,13 @@ sub representative
     }
 
     #END representative
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to representative:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'representative');
+    }
     return($return);
 }
 
@@ -4868,11 +6407,21 @@ genome_name is a string
 
 sub otu_members
 {
-    my($self, $genomes) = @_;
+    my $self = shift;
+    my($genomes) = @_;
+
+    my @_bad_arguments;
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to otu_members:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'otu_members');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN otu_members
-            my $kb = $self->{db};
+    my $kb = $self->{db};
     $return = {};
     if (@$genomes < 1) {return $return }
 
@@ -4892,6 +6441,13 @@ sub otu_members
     }
 
     #END otu_members
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to otu_members:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'otu_members');
+    }
     return($return);
 }
 
@@ -4942,11 +6498,36 @@ genome is a string
 
 sub fids_to_genomes
 {
-    my($self, $fids) = @_;
+    my $self = shift;
+    my($fids) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to fids_to_genomes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_genomes');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN fids_to_genomes
+    $return = {};
+    foreach my $fid (@$fids)
+    {
+	if ($fid =~ /^(kb\|g\.\d+)/)
+	{
+	    $return->{$fid} = $1;
+	}
+    }
     #END fids_to_genomes
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to fids_to_genomes:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'fids_to_genomes');
+    }
     return($return);
 }
 
@@ -5013,7 +6594,20 @@ parameters limit the results to "count" hits starting at "start".
 
 sub text_search
 {
-    my($self, $input, $start, $count, $entities) = @_;
+    my $self = shift;
+    my($input, $start, $count, $entities) = @_;
+
+    my @_bad_arguments;
+    (!ref($input)) or push(@_bad_arguments, "Invalid type for argument \"input\" (value was \"$input\")");
+    (!ref($start)) or push(@_bad_arguments, "Invalid type for argument \"start\" (value was \"$start\")");
+    (!ref($count)) or push(@_bad_arguments, "Invalid type for argument \"count\" (value was \"$count\")");
+    (ref($entities) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"entities\" (value was \"$entities\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to text_search:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'text_search');
+    }
+
     my $ctx = $Bio::KBase::CDMI::Service::CallContext;
     my($return);
     #BEGIN text_search
@@ -5056,6 +6650,875 @@ sub text_search
 
 
     #END text_search
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to text_search:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'text_search');
+    }
+    return($return);
+}
+
+
+
+
+=head2 corresponds
+
+  $return = $obj->corresponds($fids, $genome)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$fids is a fids
+$genome is a genome
+$return is a reference to a hash where the key is a fid and the value is a correspondence
+fids is a reference to a list where each element is a fid
+fid is a string
+genome is a string
+correspondence is a reference to a hash where the following keys are defined:
+	to has a value which is a fid
+	iden has a value which is a float
+	ncontext has a value which is an int
+	b1 has a value which is an int
+	e1 has a value which is an int
+	ln1 has a value which is an int
+	b2 has a value which is an int
+	e2 has a value which is an int
+	ln2 has a value which is an int
+	score has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$fids is a fids
+$genome is a genome
+$return is a reference to a hash where the key is a fid and the value is a correspondence
+fids is a reference to a list where each element is a fid
+fid is a string
+genome is a string
+correspondence is a reference to a hash where the following keys are defined:
+	to has a value which is a fid
+	iden has a value which is a float
+	ncontext has a value which is an int
+	b1 has a value which is an int
+	e1 has a value which is an int
+	ln1 has a value which is an int
+	b2 has a value which is an int
+	e2 has a value which is an int
+	ln2 has a value which is an int
+	score has a value which is an int
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub corresponds
+{
+    my $self = shift;
+    my($fids, $genome) = @_;
+
+    my @_bad_arguments;
+    (ref($fids) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"fids\" (value was \"$fids\")");
+    (!ref($genome)) or push(@_bad_arguments, "Invalid type for argument \"genome\" (value was \"$genome\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to corresponds:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'corresponds');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return);
+    #BEGIN corresponds
+    use Corresponds;
+    $return = {};
+    my $gH      = $self->genomes_to_fids([$genome],['peg','CDS']);
+    my $fids_to = $gH->{$genome};
+    my $loc2H   = $self->fids_to_locations($fids_to);
+    my $seq2H   = $self->fids_to_protein_sequences($fids_to);
+    my @seqs2   = map { my $loc2 = $loc2H->{$_}; 
+			my $seq2 = $seq2H->{$_};
+			($seq2 && $loc2) ? [$_,'',$seq2] : () } @$fids_to;
+    my @locs2   = map { my $loc2 = $loc2H->{$_}; 
+			my $seq2 = $seq2H->{$_};
+			($seq2 && $loc2) ? [$_,$loc2] : () } @$fids_to;
+    my %genomes_to_fids;
+    foreach $_ (@$fids)
+    {
+	if ($_ =~ /^(kb\|g\.\d+)/)
+	{
+	    push(@{$genomes_to_fids{$1}},$_);
+	}
+    }
+    foreach my $g (keys(%genomes_to_fids))
+    {
+	my $gH            = $self->genomes_to_fids([$g],['peg','CDS']);
+	my $fids_from_all = $gH->{$g};
+	my %fids_from     = map { $_ => 1 } @{$genomes_to_fids{$g}};
+
+	my $loc1H     = $self->fids_to_locations($fids_from_all);
+	my $seq1H     = $self->fids_to_protein_sequences($fids_from_all);
+	my @seqs1     = map { my $loc1 = $loc1H->{$_}; 
+			      my $seq1 = $seq1H->{$_};
+			      ($seq1 && $loc1) ? [$_,'',$seq1] : () } @$fids_from_all;
+	my @locs1     = map { my $loc1 = $loc1H->{$_}; 
+			      my $seq1 = $seq1H->{$_};
+			      ($seq1 && $loc1) ? [$_,$loc1] : () } @$fids_from_all;
+	my($corr,$reps2,$reps1) = &Corresponds::correspondence_of_reps(\@seqs1,
+								       \@locs1,
+								       \@seqs2,
+								       \@locs2,
+								       5,
+								       200);
+	foreach my $x (@$corr)
+	{
+	    my($id1,$iden,$ncontext,$b1,$e1,$ln1,$b2,$e2,$ln2,$score,$to) = @$x;
+	    if ($fids_from{$id1})
+	    {
+		$return->{$id1} = { to       => $to,
+				    iden     => $iden,
+				    ncontext => $ncontext,
+				    b1       => $b1,
+				    e1       => $e1,
+				    ln1      => $ln1,
+				    b2       => $b2,
+				    e2       => $e2,
+				    ln2      => $ln2,
+				    score    => $score
+				  };
+	    }
+	}
+
+#	foreach my $group (@$reps2)    ### filling in all members in a locus
+#	{
+#	    if (@{$group->[1]} > 1)
+#	    {
+#		my $rep  = $group->[0]->[0];
+#		my $same = $group->[1];
+#		foreach my $x (@$same)
+#		{
+#		    $return->{$x->[0]} = $return->{$rep};
+#		}
+#	    }
+#	}
+    }
+    #END corresponds
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to corresponds:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'corresponds');
+    }
+    return($return);
+}
+
+
+
+
+=head2 corresponds_from_sequences
+
+  $return = $obj->corresponds_from_sequences($g1_sequences, $g1_locations, $g2_sequences, $g2_locations)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$g1_sequences is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a fid
+	1: a protein_sequence
+$g1_locations is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a fid
+	1: a location
+$g2_sequences is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a fid
+	1: a protein_sequence
+$g2_locations is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a fid
+	1: a location
+$return is a reference to a hash where the key is a fid and the value is a correspondence
+fid is a string
+protein_sequence is a string
+location is a reference to a list where each element is a region_of_dna
+region_of_dna is a reference to a list containing 4 items:
+	0: a contig
+	1: a begin
+	2: a strand
+	3: a length
+contig is a string
+begin is an int
+strand is a string
+length is an int
+correspondence is a reference to a hash where the following keys are defined:
+	to has a value which is a fid
+	iden has a value which is a float
+	ncontext has a value which is an int
+	b1 has a value which is an int
+	e1 has a value which is an int
+	ln1 has a value which is an int
+	b2 has a value which is an int
+	e2 has a value which is an int
+	ln2 has a value which is an int
+	score has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+$g1_sequences is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a fid
+	1: a protein_sequence
+$g1_locations is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a fid
+	1: a location
+$g2_sequences is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a fid
+	1: a protein_sequence
+$g2_locations is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a fid
+	1: a location
+$return is a reference to a hash where the key is a fid and the value is a correspondence
+fid is a string
+protein_sequence is a string
+location is a reference to a list where each element is a region_of_dna
+region_of_dna is a reference to a list containing 4 items:
+	0: a contig
+	1: a begin
+	2: a strand
+	3: a length
+contig is a string
+begin is an int
+strand is a string
+length is an int
+correspondence is a reference to a hash where the following keys are defined:
+	to has a value which is a fid
+	iden has a value which is a float
+	ncontext has a value which is an int
+	b1 has a value which is an int
+	e1 has a value which is an int
+	ln1 has a value which is an int
+	b2 has a value which is an int
+	e2 has a value which is an int
+	ln2 has a value which is an int
+	score has a value which is an int
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub corresponds_from_sequences
+{
+    my $self = shift;
+    my($g1_sequences, $g1_locations, $g2_sequences, $g2_locations) = @_;
+
+    my @_bad_arguments;
+    (ref($g1_sequences) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"g1_sequences\" (value was \"$g1_sequences\")");
+    (ref($g1_locations) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"g1_locations\" (value was \"$g1_locations\")");
+    (ref($g2_sequences) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"g2_sequences\" (value was \"$g2_sequences\")");
+    (ref($g2_locations) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"g2_locations\" (value was \"$g2_locations\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to corresponds_from_sequences:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'corresponds_from_sequences');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return);
+    #BEGIN corresponds_from_sequences
+    
+    use Corresponds;
+    $return = {};
+    
+    my($corr,$reps2,$reps1) = &Corresponds::correspondence_of_reps([map { [$_->[0], undef, $_->[1]] } @$g1_sequences],
+								   $g1_locations,
+								   [map { [$_->[0], undef, $_->[1]] } @$g2_sequences],
+								   $g2_locations,
+								   5,
+								   200);
+    foreach my $x (@$corr)
+    {
+	my($id1,$iden,$ncontext,$b1,$e1,$ln1,$b2,$e2,$ln2,$score,$to) = @$x;
+	
+	$return->{$id1} = { to       => $to,
+				iden     => $iden,
+				ncontext => $ncontext,
+				b1       => $b1,
+				e1       => $e1,
+				ln1      => $ln1,
+				b2       => $b2,
+				e2       => $e2,
+				ln2      => $ln2,
+				score    => $score
+				};
+    }
+    
+    
+    #END corresponds_from_sequences
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to corresponds_from_sequences:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'corresponds_from_sequences');
+    }
+    return($return);
+}
+
+
+
+
+=head2 close_genomes
+
+  $return = $obj->close_genomes($genomes, $n)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$genomes is a genomes
+$n is an int
+$return is a reference to a hash where the key is a genome and the value is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a genome
+	1: a float
+genomes is a reference to a list where each element is a genome
+genome is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$genomes is a genomes
+$n is an int
+$return is a reference to a hash where the key is a genome and the value is a reference to a list where each element is a reference to a list containing 2 items:
+	0: a genome
+	1: a float
+genomes is a reference to a list where each element is a genome
+genome is a string
+
+
+=end text
+
+
+
+=item Description
+
+A close_genomes is used to get a set of relatively close genomes (for
+each input genome, a set of close genomes is calculated, but the
+result should be viewed as quite approximate.  It is quite slow,
+using similarities for a universal protein as the basis for the 
+assessments.  It produces estimates of degree of similarity for
+the universal proteins it samples. 
+
+
+Up to n genomes will be returned for each input genome.
+
+=back
+
+=cut
+
+sub close_genomes
+{
+    my $self = shift;
+    my($genomes, $n) = @_;
+
+    my @_bad_arguments;
+    (ref($genomes) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"genomes\" (value was \"$genomes\")");
+    (!ref($n)) or push(@_bad_arguments, "Invalid type for argument \"n\" (value was \"$n\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to close_genomes:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'close_genomes');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return);
+    #BEGIN close_genomes
+    $return = {};
+    use CloseGenomes;
+    foreach my $g (@$genomes)
+    {
+	my $parms = {};
+	my $contigs;
+	if ($g =~ /^kb\|/)
+	{
+	    open(CONTIGS,"echo '$g' | genomes_to_contigs | contigs_to_sequences |");
+	    $contigs = &gjoseqlib::read_fasta(\*CONTIGS);
+	    close(CONTIGS);
+	    $parms->{-source} = "KBase";
+	    use Bio::KBase::CDMI::CDMIClient;
+	    use Bio::KBase::Utilities::ScriptThing;
+	    $parms->{-csObj} = Bio::KBase::CDMI::CDMIClient->new_for_script();
+	}
+	elsif (($g =~ /^\d+\.\d+/) && (! -d $g))
+	{
+	    open(CONTIGS,"echo '$g' | svr_contigs_in_genome | svr_dna_seq -fasta 1 |");
+	    $contigs = &gjoseqlib::read_fasta(\*CONTIGS);
+	    close(CONTIGS);
+	    $parms->{-source} = "SEED";
+	    use Bio::KBase::CDMI::CDMIClient;
+	    use Bio::KBase::Utilities::ScriptThing;
+	    use SAPserver;
+	    $parms->{-sapObj} = SAPserver->new();
+	}
+	else
+	{
+	    use JSON::XS;
+	    open(CONTIGS,"<$g") || die "$g is not a file that can be opened";
+	    my $json = JSON::XS->new;
+	    my $input_genome;
+	    local $/;
+	    undef $/;
+	    my $input_genome_txt = <CONTIGS>;
+	    $input_genome = $json->decode($input_genome_txt);
+	    my $tmp = $input_genome->{contigs};
+	    my @raw_contigs = map { [$_->{id},'',$_->{dna}] }  @$tmp;
+	    $contigs = \@raw_contigs;
+	    $parms->{-source} = "KBase";
+	    use Bio::KBase::CDMI::CDMIClient;
+	    use Bio::KBase::Utilities::ScriptThing;
+	    $parms->{-csObj} = Bio::KBase::CDMI::CDMIClient->new_for_script();
+	}
+	my ($close,$coding) = &CloseGenomes::close_genomes_and_hits($contigs, $parms);
+	my @tmp = @$close;
+	if (@tmp > $n) { $#tmp = $n-1 }  # return the $n closest
+	$return->{$g} = \@tmp;
+    }
+    #END close_genomes
+    my @_bad_returns;
+    (ref($return) eq 'HASH') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to close_genomes:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'close_genomes');
+    }
+    return($return);
+}
+
+
+
+
+=head2 representative_sequences
+
+  $return_1, $return_2 = $obj->representative_sequences($seq_set, $rep_seq_parms)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$seq_set is a seq_set
+$rep_seq_parms is a rep_seq_parms
+$return_1 is an id_set
+$return_2 is a reference to a list where each element is an id_set
+seq_set is a reference to a list where each element is a seq_triple
+seq_triple is a reference to a list containing 3 items:
+	0: an id
+	1: a comment
+	2: a sequence
+id is a string
+comment is a string
+sequence is a string
+rep_seq_parms is a reference to a hash where the following keys are defined:
+	existing_reps has a value which is a seq_set
+	order has a value which is a string
+	alg has a value which is an int
+	type_sim has a value which is a string
+	cutoff has a value which is a float
+id_set is a reference to a list where each element is an id
+
+</pre>
+
+=end html
+
+=begin text
+
+$seq_set is a seq_set
+$rep_seq_parms is a rep_seq_parms
+$return_1 is an id_set
+$return_2 is a reference to a list where each element is an id_set
+seq_set is a reference to a list where each element is a seq_triple
+seq_triple is a reference to a list containing 3 items:
+	0: an id
+	1: a comment
+	2: a sequence
+id is a string
+comment is a string
+sequence is a string
+rep_seq_parms is a reference to a hash where the following keys are defined:
+	existing_reps has a value which is a seq_set
+	order has a value which is a string
+	alg has a value which is an int
+	type_sim has a value which is a string
+	cutoff has a value which is a float
+id_set is a reference to a list where each element is an id
+
+
+=end text
+
+
+
+=item Description
+
+we return two arguments.  The first is the list of representative triples,
+and the second is the list of sets (the first entry always being the
+representative sequence)
+
+=back
+
+=cut
+
+sub representative_sequences
+{
+    my $self = shift;
+    my($seq_set, $rep_seq_parms) = @_;
+
+    my @_bad_arguments;
+    (ref($seq_set) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"seq_set\" (value was \"$seq_set\")");
+    (ref($rep_seq_parms) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"rep_seq_parms\" (value was \"$rep_seq_parms\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to representative_sequences:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'representative_sequences');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return_1, $return_2);
+    #BEGIN representative_sequences
+    my $options = {};
+    use gjoseqlib;
+    use representative_sequences;
+    
+    local $_;
+    my($rep,$reping);
+    if ($rep_seq_parms->{order}) { $options->{by_size} = $rep_seq_parms->{order} }
+    if ($_ = $rep_seq_parms->{type_sim}) { $options->{sim_meas} = $_ }
+    if ($_ = $rep_seq_parms->{cutoff})   { $options->{max_sim} = $_ }
+    my @args = ($seq_set,$options);
+    if ($_ = $rep_seq_parms->{existing_reps})
+    {
+	unshift(@args,$_);
+    }
+    if ($options->{alg})
+    {
+	($rep,$reping) = &representative_sequences::rep_seq_2(@args);
+    }
+    else
+    {
+	($rep,$reping) = &representative_sequences::rep_seq(@args);
+    }
+    $return_1 = [map { $_->[0] } @$rep];
+    $return_2 = [ map { [ $_, @{ $reping->{ $_ } } ] } @$return_1 ]; 
+    #END representative_sequences
+    my @_bad_returns;
+    (ref($return_1) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"return_1\" (value was \"$return_1\")");
+    (ref($return_2) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"return_2\" (value was \"$return_2\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to representative_sequences:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'representative_sequences');
+    }
+    return($return_1, $return_2);
+}
+
+
+
+
+=head2 align_sequences
+
+  $return = $obj->align_sequences($seq_set, $align_seq_parms)
+
+=over 4
+
+=item Parameter and return types
+
+=begin html
+
+<pre>
+$seq_set is a seq_set
+$align_seq_parms is an align_seq_parms
+$return is a seq_set
+seq_set is a reference to a list where each element is a seq_triple
+seq_triple is a reference to a list containing 3 items:
+	0: an id
+	1: a comment
+	2: a sequence
+id is a string
+comment is a string
+sequence is a string
+align_seq_parms is a reference to a hash where the following keys are defined:
+	muscle_parms has a value which is a muscle_parms_t
+	mafft_parms has a value which is a mafft_parms_t
+	tool has a value which is a string
+	align_ends_with_clustal has a value which is an int
+muscle_parms_t is a reference to a hash where the following keys are defined:
+	anchors has a value which is an int
+	brenner has a value which is an int
+	cluster has a value which is an int
+	dimer has a value which is an int
+	diags has a value which is an int
+	diags1 has a value which is an int
+	diags2 has a value which is an int
+	le has a value which is an int
+	noanchors has a value which is an int
+	sp has a value which is an int
+	spn has a value which is an int
+	stable has a value which is an int
+	sv has a value which is an int
+	anchorspacing has a value which is a string
+	center has a value which is a string
+	cluster1 has a value which is a string
+	cluster2 has a value which is a string
+	diagbreak has a value which is a string
+	diaglength has a value which is a string
+	diagmargin has a value which is a string
+	distance1 has a value which is a string
+	distance2 has a value which is a string
+	gapopen has a value which is a string
+	log has a value which is a string
+	loga has a value which is a string
+	matrix has a value which is a string
+	maxhours has a value which is a string
+	maxiters has a value which is a string
+	maxmb has a value which is a string
+	maxtrees has a value which is a string
+	minbestcolscore has a value which is a string
+	minsmoothscore has a value which is a string
+	objscore has a value which is a string
+	refinewindow has a value which is a string
+	root1 has a value which is a string
+	root2 has a value which is a string
+	scorefile has a value which is a string
+	seqtype has a value which is a string
+	smoothscorecell has a value which is a string
+	smoothwindow has a value which is a string
+	spscore has a value which is a string
+	SUEFF has a value which is a string
+	usetree has a value which is a string
+	weight1 has a value which is a string
+	weight2 has a value which is a string
+mafft_parms_t is a reference to a hash where the following keys are defined:
+	sixmerpair has a value which is an int
+	amino has a value which is an int
+	anysymbol has a value which is an int
+	auto has a value which is an int
+	clustalout has a value which is an int
+	dpparttree has a value which is an int
+	fastapair has a value which is an int
+	fastaparttree has a value which is an int
+	fft has a value which is an int
+	fmodel has a value which is an int
+	genafpair has a value which is an int
+	globalpair has a value which is an int
+	inputorder has a value which is an int
+	localpair has a value which is an int
+	memsave has a value which is an int
+	nofft has a value which is an int
+	noscore has a value which is an int
+	parttree has a value which is an int
+	reorder has a value which is an int
+	treeout has a value which is an int
+	alg has a value which is a string
+	aamatrix has a value which is a string
+	bl has a value which is a string
+	ep has a value which is a string
+	groupsize has a value which is a string
+	jtt has a value which is a string
+	lap has a value which is a string
+	lep has a value which is a string
+	lepx has a value which is a string
+	LOP has a value which is a string
+	LEXP has a value which is a string
+	maxiterate has a value which is a string
+	op has a value which is a string
+	partsize has a value which is a string
+	retree has a value which is a string
+	thread has a value which is a string
+	tm has a value which is a string
+	weighti has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+$seq_set is a seq_set
+$align_seq_parms is an align_seq_parms
+$return is a seq_set
+seq_set is a reference to a list where each element is a seq_triple
+seq_triple is a reference to a list containing 3 items:
+	0: an id
+	1: a comment
+	2: a sequence
+id is a string
+comment is a string
+sequence is a string
+align_seq_parms is a reference to a hash where the following keys are defined:
+	muscle_parms has a value which is a muscle_parms_t
+	mafft_parms has a value which is a mafft_parms_t
+	tool has a value which is a string
+	align_ends_with_clustal has a value which is an int
+muscle_parms_t is a reference to a hash where the following keys are defined:
+	anchors has a value which is an int
+	brenner has a value which is an int
+	cluster has a value which is an int
+	dimer has a value which is an int
+	diags has a value which is an int
+	diags1 has a value which is an int
+	diags2 has a value which is an int
+	le has a value which is an int
+	noanchors has a value which is an int
+	sp has a value which is an int
+	spn has a value which is an int
+	stable has a value which is an int
+	sv has a value which is an int
+	anchorspacing has a value which is a string
+	center has a value which is a string
+	cluster1 has a value which is a string
+	cluster2 has a value which is a string
+	diagbreak has a value which is a string
+	diaglength has a value which is a string
+	diagmargin has a value which is a string
+	distance1 has a value which is a string
+	distance2 has a value which is a string
+	gapopen has a value which is a string
+	log has a value which is a string
+	loga has a value which is a string
+	matrix has a value which is a string
+	maxhours has a value which is a string
+	maxiters has a value which is a string
+	maxmb has a value which is a string
+	maxtrees has a value which is a string
+	minbestcolscore has a value which is a string
+	minsmoothscore has a value which is a string
+	objscore has a value which is a string
+	refinewindow has a value which is a string
+	root1 has a value which is a string
+	root2 has a value which is a string
+	scorefile has a value which is a string
+	seqtype has a value which is a string
+	smoothscorecell has a value which is a string
+	smoothwindow has a value which is a string
+	spscore has a value which is a string
+	SUEFF has a value which is a string
+	usetree has a value which is a string
+	weight1 has a value which is a string
+	weight2 has a value which is a string
+mafft_parms_t is a reference to a hash where the following keys are defined:
+	sixmerpair has a value which is an int
+	amino has a value which is an int
+	anysymbol has a value which is an int
+	auto has a value which is an int
+	clustalout has a value which is an int
+	dpparttree has a value which is an int
+	fastapair has a value which is an int
+	fastaparttree has a value which is an int
+	fft has a value which is an int
+	fmodel has a value which is an int
+	genafpair has a value which is an int
+	globalpair has a value which is an int
+	inputorder has a value which is an int
+	localpair has a value which is an int
+	memsave has a value which is an int
+	nofft has a value which is an int
+	noscore has a value which is an int
+	parttree has a value which is an int
+	reorder has a value which is an int
+	treeout has a value which is an int
+	alg has a value which is a string
+	aamatrix has a value which is a string
+	bl has a value which is a string
+	ep has a value which is a string
+	groupsize has a value which is a string
+	jtt has a value which is a string
+	lap has a value which is a string
+	lep has a value which is a string
+	lepx has a value which is a string
+	LOP has a value which is a string
+	LEXP has a value which is a string
+	maxiterate has a value which is a string
+	op has a value which is a string
+	partsize has a value which is a string
+	retree has a value which is a string
+	thread has a value which is a string
+	tm has a value which is a string
+	weighti has a value which is a string
+
+
+=end text
+
+
+
+=item Description
+
+
+
+=back
+
+=cut
+
+sub align_sequences
+{
+    my $self = shift;
+    my($seq_set, $align_seq_parms) = @_;
+
+    my @_bad_arguments;
+    (ref($seq_set) eq 'ARRAY') or push(@_bad_arguments, "Invalid type for argument \"seq_set\" (value was \"$seq_set\")");
+    (ref($align_seq_parms) eq 'HASH') or push(@_bad_arguments, "Invalid type for argument \"align_seq_parms\" (value was \"$align_seq_parms\")");
+    if (@_bad_arguments) {
+	my $msg = "Invalid arguments passed to align_sequences:\n" . join("", map { "\t$_\n" } @_bad_arguments);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'align_sequences');
+    }
+
+    my $ctx = $Bio::KBase::CDMI::Service::CallContext;
+    my($return);
+    #BEGIN align_sequences
+    #END align_sequences
+    my @_bad_returns;
+    (ref($return) eq 'ARRAY') or push(@_bad_returns, "Invalid type for return variable \"return\" (value was \"$return\")");
+    if (@_bad_returns) {
+	my $msg = "Invalid returns passed to align_sequences:\n" . join("", map { "\t$_\n" } @_bad_returns);
+	Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
+							       method_name => 'align_sequences');
+    }
     return($return);
 }
 
@@ -6714,6 +9177,260 @@ a reference to a list where each element is a fc_protein_family
 
 
 
+=head2 allele
+
+=over 4
+
+
+
+=item Description
+
+We now have a number of types and functions relating to ObservationalUnits (ous),
+alleles and traits.  We think of a reference genome and a set of ous that
+have measured differences (SNPs) when compared to the reference genome.
+Each allele is associated with a position on a contig of the reference genome.
+Prior analysis has associated traits with the alleles that impact them.
+We are interested in supporting operations that locate genes in the region
+of an allele (i.e., genes of the reference genome that are in a region 
+containining an allele).  Similarly, we wish to locate the alleles that
+impact a trait, map the alleles to regions, loacte the possibly impacted genes,
+relate these to subsystems, etc.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 alleles
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is an allele
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is an allele
+
+=end text
+
+=back
+
+
+
+=head2 trait
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 traits
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is a trait
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is a trait
+
+=end text
+
+=back
+
+
+
+=head2 ou
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 ous
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is an ou
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is an ou
+
+=end text
+
+=back
+
+
+
+=head2 bp_loc
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 2 items:
+0: a contig
+1: an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 2 items:
+0: a contig
+1: an int
+
+
+=end text
+
+=back
+
+
+
+=head2 measurement_type
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 measurement_value
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a float
+</pre>
+
+=end html
+
+=begin text
+
+a float
+
+=end text
+
+=back
+
+
+
 =head2 aux
 
 =over 4
@@ -7286,11 +10003,10 @@ a string
 =begin html
 
 <pre>
-a reference to a list containing 4 items:
+a reference to a list containing 3 items:
 0: an id
 1: a function
 2: a source
-3: an expert
 
 </pre>
 
@@ -7298,11 +10014,10 @@ a reference to a list containing 4 items:
 
 =begin text
 
-a reference to a list containing 4 items:
+a reference to a list containing 3 items:
 0: an id
 1: a function
 2: a source
-3: an expert
 
 
 =end text
@@ -7739,6 +10454,482 @@ a reference to a list containing 2 items:
 a reference to a list containing 2 items:
 0: a weight
 1: a reference to a hash where the key is a field_name and the value is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 correspondence
+
+=over 4
+
+
+
+=item Description
+
+A correspondence is generated as a mapping of fids to fids.  The mapping
+attempts to map a fid to another that performs the same function.  The
+correspondence describes the regions that are similar, the strength of
+the similarity, the number of genes in the chromosomal context that appear
+to "correspond" and a score from 0 to 1 that loosely corresponds to 
+confidence in the correspondence.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+to has a value which is a fid
+iden has a value which is a float
+ncontext has a value which is an int
+b1 has a value which is an int
+e1 has a value which is an int
+ln1 has a value which is an int
+b2 has a value which is an int
+e2 has a value which is an int
+ln2 has a value which is an int
+score has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+to has a value which is a fid
+iden has a value which is a float
+ncontext has a value which is an int
+b1 has a value which is an int
+e1 has a value which is an int
+ln1 has a value which is an int
+b2 has a value which is an int
+e2 has a value which is an int
+ln2 has a value which is an int
+score has a value which is an int
+
+
+=end text
+
+=back
+
+
+
+=head2 sequence
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 seq_triple
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list containing 3 items:
+0: an id
+1: a comment
+2: a sequence
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list containing 3 items:
+0: an id
+1: a comment
+2: a sequence
+
+
+=end text
+
+=back
+
+
+
+=head2 seq_set
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is a seq_triple
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is a seq_triple
+
+=end text
+
+=back
+
+
+
+=head2 id_set
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a list where each element is an id
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a list where each element is an id
+
+=end text
+
+=back
+
+
+
+=head2 rep_seq_parms
+
+=over 4
+
+
+
+=item Description
+
+fractions or bits
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+existing_reps has a value which is a seq_set
+order has a value which is a string
+alg has a value which is an int
+type_sim has a value which is a string
+cutoff has a value which is a float
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+existing_reps has a value which is a seq_set
+order has a value which is a string
+alg has a value which is an int
+type_sim has a value which is a string
+cutoff has a value which is a float
+
+
+=end text
+
+=back
+
+
+
+=head2 muscle_parms_t
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+anchors has a value which is an int
+brenner has a value which is an int
+cluster has a value which is an int
+dimer has a value which is an int
+diags has a value which is an int
+diags1 has a value which is an int
+diags2 has a value which is an int
+le has a value which is an int
+noanchors has a value which is an int
+sp has a value which is an int
+spn has a value which is an int
+stable has a value which is an int
+sv has a value which is an int
+anchorspacing has a value which is a string
+center has a value which is a string
+cluster1 has a value which is a string
+cluster2 has a value which is a string
+diagbreak has a value which is a string
+diaglength has a value which is a string
+diagmargin has a value which is a string
+distance1 has a value which is a string
+distance2 has a value which is a string
+gapopen has a value which is a string
+log has a value which is a string
+loga has a value which is a string
+matrix has a value which is a string
+maxhours has a value which is a string
+maxiters has a value which is a string
+maxmb has a value which is a string
+maxtrees has a value which is a string
+minbestcolscore has a value which is a string
+minsmoothscore has a value which is a string
+objscore has a value which is a string
+refinewindow has a value which is a string
+root1 has a value which is a string
+root2 has a value which is a string
+scorefile has a value which is a string
+seqtype has a value which is a string
+smoothscorecell has a value which is a string
+smoothwindow has a value which is a string
+spscore has a value which is a string
+SUEFF has a value which is a string
+usetree has a value which is a string
+weight1 has a value which is a string
+weight2 has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+anchors has a value which is an int
+brenner has a value which is an int
+cluster has a value which is an int
+dimer has a value which is an int
+diags has a value which is an int
+diags1 has a value which is an int
+diags2 has a value which is an int
+le has a value which is an int
+noanchors has a value which is an int
+sp has a value which is an int
+spn has a value which is an int
+stable has a value which is an int
+sv has a value which is an int
+anchorspacing has a value which is a string
+center has a value which is a string
+cluster1 has a value which is a string
+cluster2 has a value which is a string
+diagbreak has a value which is a string
+diaglength has a value which is a string
+diagmargin has a value which is a string
+distance1 has a value which is a string
+distance2 has a value which is a string
+gapopen has a value which is a string
+log has a value which is a string
+loga has a value which is a string
+matrix has a value which is a string
+maxhours has a value which is a string
+maxiters has a value which is a string
+maxmb has a value which is a string
+maxtrees has a value which is a string
+minbestcolscore has a value which is a string
+minsmoothscore has a value which is a string
+objscore has a value which is a string
+refinewindow has a value which is a string
+root1 has a value which is a string
+root2 has a value which is a string
+scorefile has a value which is a string
+seqtype has a value which is a string
+smoothscorecell has a value which is a string
+smoothwindow has a value which is a string
+spscore has a value which is a string
+SUEFF has a value which is a string
+usetree has a value which is a string
+weight1 has a value which is a string
+weight2 has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 mafft_parms_t
+
+=over 4
+
+
+
+=item Description
+
+linsi | einsi | ginsi | nwnsi | nwns | fftnsi | fftns (D)
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+sixmerpair has a value which is an int
+amino has a value which is an int
+anysymbol has a value which is an int
+auto has a value which is an int
+clustalout has a value which is an int
+dpparttree has a value which is an int
+fastapair has a value which is an int
+fastaparttree has a value which is an int
+fft has a value which is an int
+fmodel has a value which is an int
+genafpair has a value which is an int
+globalpair has a value which is an int
+inputorder has a value which is an int
+localpair has a value which is an int
+memsave has a value which is an int
+nofft has a value which is an int
+noscore has a value which is an int
+parttree has a value which is an int
+reorder has a value which is an int
+treeout has a value which is an int
+alg has a value which is a string
+aamatrix has a value which is a string
+bl has a value which is a string
+ep has a value which is a string
+groupsize has a value which is a string
+jtt has a value which is a string
+lap has a value which is a string
+lep has a value which is a string
+lepx has a value which is a string
+LOP has a value which is a string
+LEXP has a value which is a string
+maxiterate has a value which is a string
+op has a value which is a string
+partsize has a value which is a string
+retree has a value which is a string
+thread has a value which is a string
+tm has a value which is a string
+weighti has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+sixmerpair has a value which is an int
+amino has a value which is an int
+anysymbol has a value which is an int
+auto has a value which is an int
+clustalout has a value which is an int
+dpparttree has a value which is an int
+fastapair has a value which is an int
+fastaparttree has a value which is an int
+fft has a value which is an int
+fmodel has a value which is an int
+genafpair has a value which is an int
+globalpair has a value which is an int
+inputorder has a value which is an int
+localpair has a value which is an int
+memsave has a value which is an int
+nofft has a value which is an int
+noscore has a value which is an int
+parttree has a value which is an int
+reorder has a value which is an int
+treeout has a value which is an int
+alg has a value which is a string
+aamatrix has a value which is a string
+bl has a value which is a string
+ep has a value which is a string
+groupsize has a value which is a string
+jtt has a value which is a string
+lap has a value which is a string
+lep has a value which is a string
+lepx has a value which is a string
+LOP has a value which is a string
+LEXP has a value which is a string
+maxiterate has a value which is a string
+op has a value which is a string
+partsize has a value which is a string
+retree has a value which is a string
+thread has a value which is a string
+tm has a value which is a string
+weighti has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 align_seq_parms
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+muscle_parms has a value which is a muscle_parms_t
+mafft_parms has a value which is a mafft_parms_t
+tool has a value which is a string
+align_ends_with_clustal has a value which is an int
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+muscle_parms has a value which is a muscle_parms_t
+mafft_parms has a value which is a mafft_parms_t
+tool has a value which is a string
+align_ends_with_clustal has a value which is an int
 
 
 =end text

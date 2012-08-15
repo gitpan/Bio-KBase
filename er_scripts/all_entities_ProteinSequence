@@ -32,15 +32,17 @@ The ProteinSequence entity has the following relationship links:
 
 =over 4
     
+=item HasAssertedFunctionFrom Source
+
 =item IsATopicOf Publication
 
 =item IsAlignedBy AlignmentTree
 
-=item IsNamedBy Identifier
-
 =item IsProjectedOnto ProteinSequence
 
 =item IsProteinFor Feature
+
+=item IsProteinMemberOf Family
 
 =item ProjectsOnto ProteinSequence
 
@@ -137,7 +139,7 @@ elsif ($f) {
 }
 
 my $start = 0;
-my $count = 1000;
+my $count = 1_000_000;
 
 my $h = $geO->all_entities_ProteinSequence($start, $count, \@fields );
 
@@ -145,7 +147,7 @@ while (%$h)
 {
     while (my($k, $v) = each %$h)
     {
-	print join("\t", $k, @$v{@fields}), "\n";
+	print join("\t", $k, map { ref($_) eq 'ARRAY' ? join(",", @$_) : $_ } @$v{@fields}), "\n";
     }
     $start += $count;
     $h = $geO->all_entities_ProteinSequence($start, $count, \@fields);

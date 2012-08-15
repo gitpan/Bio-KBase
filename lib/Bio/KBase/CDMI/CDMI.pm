@@ -149,6 +149,12 @@ C<mysql>.
 L<Data::UUID> object for generating annotation IDs. Will not exist
 unless it's needed.
 
+=item develop
+
+If TRUE, then the development database will be used. The development
+database is located on a different server with a different DBD. This
+option overrides C<dbhost>, C<externalDBD>, C<dbname>, and C<DBD>.
+
 =back
 
 =cut
@@ -160,10 +166,16 @@ sub new {
     if (! $options{loadDirectory}) {
         $options{loadDirectory} = "/home/parrello/CdmiData";
     }
-    my $dbd = $options{DBD} || $ENV{CDMIDBD} || "$options{loadDirectory}/KSaplingDBD.xml";
-    my $dbName = $options{dbName} || "kbase_sapling";
-    my $userData = $options{userData} || "seed/";
+    my $dbd = $options{DBD} || $ENV{CDMIDBD} || "$options{loadDirectory}/Published/KSaplingDBD.xml";
     my $dbhost = $options{dbhost} || "db1.chicago.kbase.us"; # "bio-data-1.mcs.anl.gov";
+    my $dbName = $options{dbName} || "kbase_sapling_v1";
+    my $userData = $options{userData} || "kbase_sapselect/oiwn22&dmwWEe";
+    if ($options{develop}) {
+        $dbd = "$options{loadDirectory}/KSaplingDBD.xml";
+        $dbhost = "oak.mcs.anl.gov";
+        $dbName = "kbase_sapling";
+        $options{externalDBD} = 1;
+    }
     my $port = $options{port} || 3306;
     my $dbms = $options{dbms} || 'mysql';
     # Insure that if the user specified a DBD, it overrides the internal one.
@@ -236,6 +248,13 @@ MYSQL port number to use (MySQL only).
 
 Database management system to use (e.g. C<postgres>, default C<mysql>).
 
+=item develop
+
+If specified, then the development database will be used. This database
+is located on a different server with a different DBD. The C<develop>
+option overrides C<dbhost>, C<dbname> and C<DBD>, and forces use of an
+external DBD.
+
 =back
 
 =cut
@@ -246,21 +265,23 @@ sub new_for_script {
     # We'll put the return value in here if the command-line parse fails.
     my $retVal;
     # Create the variables for our internal options.
-    my ($loadDirectory, $dbd, $dbName, $sock, $userData, $dbhost, $port, $dbms);
+    my ($loadDirectory, $dbd, $dbName, $sock, $userData, $dbhost, $port, $dbms, $develop);
     # Parse the command line.
     my $rc = GetOptions(%options, "loadDirectory=s" => \$loadDirectory,
             "DBD=s" => \$dbd, "dbName=s" => \$dbName, "sock=s" => \$sock,
             "userData=s" => \$userData, "dbhost=s" => \$dbhost,
-            "port=i" => \$port, "dbms=s" => \$dbms);
+            "port=i" => \$port, "dbms=s" => \$dbms, develop => \$develop);
     # If the parse worked, create the CDMI object.
     if ($rc) {
         $retVal = Bio::KBase::CDMI::CDMI::new($class, loadDirectory => $loadDirectory, DBD => $dbd,
                 dbName => $dbName, sock => $sock, userData => $userData,
-                dbhost => $dbhost, port => $port, dbms => $dbms);
+                dbhost => $dbhost, port => $port, dbms => $dbms,
+                develop => $develop);
     }
     # Return the result.
     return $retVal;
 }
+
 
 =head2 Public Methods
 

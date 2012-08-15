@@ -60,8 +60,6 @@ The Feature entity has the following relationship links:
 
 =item IsAnnotatedBy Annotation
 
-=item IsBindingSiteFor CoregulatedSet
-
 =item IsContainedIn SSCell
 
 =item IsCoregulatedWith Feature
@@ -114,6 +112,8 @@ strings. The following fields are available:
 
 =item function
 
+=item alias
+
 =back    
 
 =back
@@ -131,7 +131,7 @@ use Getopt::Long;
 
 #Default fields
 
-my @all_fields = ( 'feature_type', 'source_id', 'sequence_length', 'function' );
+my @all_fields = ( 'feature_type', 'source_id', 'sequence_length', 'function', 'alias' );
 my %all_fields = map { $_ => 1 } @all_fields;
 
 my $usage = "usage: get_entity_Feature [-h] [-c column] [-a | -f field list] < ids > extended.by.a.column(s)";
@@ -181,7 +181,16 @@ elsif ($f) {
     exit 1;
 }
 
-open my $ih, "<$i";
+my $ih;
+if ($i eq '-')
+{
+    $ih = \*STDIN;
+}
+else
+{
+    open($ih, "<", $i) or die "Cannot open input file $i: $!\n";
+}
+
 while (my @tuples = Bio::KBase::Utilities::ScriptThing::GetBatch($ih, undef, $column)) {
     my @h = map { $_->[0] } @tuples;
     my $h = $geO->get_entity_Feature(\@h, \@fields);
@@ -195,7 +204,8 @@ while (my @tuples = Bio::KBase::Utilities::ScriptThing::GetBatch($ih, undef, $co
 	    print STDERR $line,"\n";
      	} else {
 	    foreach $_ (@fields) {
-		push (@values, $v->{$_});
+		my $val = $v->{$_};
+		push (@values, ref($val) eq 'ARRAY' ? join(",", @$val) : $val);
 	    }
 	    my $tail = join("\t", @values);
 	    print "$line\t$tail\n";

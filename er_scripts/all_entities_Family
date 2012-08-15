@@ -47,6 +47,8 @@ The Family entity has the following relationship links:
     
 =item HasMember Feature
 
+=item HasProteinMember ProteinSequence
+
 =item IsCoupledTo Family
 
 =item IsCoupledWith Family
@@ -80,7 +82,11 @@ strings. The following fields are available:
 
 =item type
 
+=item release
+
 =item family_function
+
+=item alignment
 
 =back    
    
@@ -99,7 +105,7 @@ use Getopt::Long;
 
 #Default fields
 
-my @all_fields = ( 'type', 'family_function' );
+my @all_fields = ( 'type', 'release', 'family_function', 'alignment' );
 my %all_fields = map { $_ => 1 } @all_fields;
 
 my $usage = "usage: all_entities_Family [-show-fields] [-a | -f field list] > entity.data";
@@ -150,7 +156,7 @@ elsif ($f) {
 }
 
 my $start = 0;
-my $count = 1000;
+my $count = 1_000_000;
 
 my $h = $geO->all_entities_Family($start, $count, \@fields );
 
@@ -158,7 +164,7 @@ while (%$h)
 {
     while (my($k, $v) = each %$h)
     {
-	print join("\t", $k, @$v{@fields}), "\n";
+	print join("\t", $k, map { ref($_) eq 'ARRAY' ? join(",", @$_) : $_ } @$v{@fields}), "\n";
     }
     $start += $count;
     $h = $geO->all_entities_Family($start, $count, \@fields);
